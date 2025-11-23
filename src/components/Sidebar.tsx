@@ -1,5 +1,10 @@
 import { NavLink } from "react-router-dom";
 
+type SidebarProps = {
+  open?: boolean;
+  onClose?: () => void;
+};
+
 const navItems = [
   { label: "Dashboard", to: "/" },
   { label: "Admin Users", to: "/users" },
@@ -8,9 +13,9 @@ const navItems = [
   { label: "Settings", to: "/settings" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }: SidebarProps) {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${open ? "sidebar--open" : ""}`}>
       <div className="sidebar__header">
         <p>Control Panel</p>
         <small>Admin tools</small>
@@ -24,6 +29,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `sidebar__link ${isActive ? "sidebar__link--active" : ""}`
             }
+            onClick={onClose}
           >
             {item.label}
           </NavLink>

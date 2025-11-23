@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ContentShell from "../components/ContentShell";
+import PageHeader from "../components/PageHeader";
 import { coreServices } from "../config/services";
 import { mockLogs } from "../config/logs";
 import type { LogEntry, LogLevel, LogServiceId } from "../config/logs";
@@ -49,7 +50,7 @@ function formatTimestamp(value: string) {
   }
   const day = date.toISOString().slice(0, 10);
   const time = date.toISOString().slice(11, 16);
-  return `${day} · ${time}`;
+  return `${day} - ${time}`;
 }
 
 export default function LogsPage() {
@@ -96,11 +97,17 @@ export default function LogsPage() {
   );
 
   return (
-    <ContentShell title="Logs" description="Inspect errors, warnings and info across SFDataHub services">
-      <div className="logs-header">
-        <p className="logs-header__hint">Demo data only – backend wiring later</p>
-      </div>
-
+    <ContentShell
+      title="Logs"
+      description="Inspect errors, warnings and info across SFDataHub services"
+      headerContent={
+        <PageHeader
+          title="Logs"
+          subtitle="Inspect errors, warnings and info across SFDataHub services"
+          hintRight="Demo data only - backend wiring later"
+        />
+      }
+    >
       <div className="logs-filters">
         <label className="filter-control">
           <span>Service</span>
@@ -161,10 +168,14 @@ export default function LogsPage() {
             className="log-row"
             onClick={() => setSelectedLog(log)}
           >
-            <span className="log-row__timestamp">{formatTimestamp(log.timestamp)}</span>
-            <span className={`log-badge log-badge--${log.level}`}>{log.level}</span>
-            <span className="log-row__service">{serviceNameMap[log.service] ?? "Other"}</span>
-            <span className="log-row__message">{log.message}</span>
+            <div className="log-row__head">
+              <span className="log-row__timestamp">{formatTimestamp(log.timestamp)}</span>
+              <span className={`log-badge log-badge--${log.level}`}>{log.level}</span>
+            </div>
+            <div className="log-row__body">
+              <span className="log-row__service">{serviceNameMap[log.service] ?? "Other"}</span>
+              <span className="log-row__message">{log.message}</span>
+            </div>
           </button>
         ))}
       </div>

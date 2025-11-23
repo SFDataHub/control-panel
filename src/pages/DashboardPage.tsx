@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ContentShell from "../components/ContentShell";
+import PageHeader from "../components/PageHeader";
 import { coreServices } from "../config/services";
 import type { Service } from "../config/services";
 
@@ -14,6 +15,8 @@ const serviceKindLabels: Record<Service["kind"], string> = {
   api: "API",
   db: "DB",
   analytics: "Analytics",
+  worker: "Worker",
+  other: "Other",
 };
 
 const errorsSummary = {
@@ -30,6 +33,12 @@ export default function DashboardPage() {
     <ContentShell
       title="SFDataHub Control Panel"
       description="Overview of services, errors and analytics"
+      headerContent={
+        <PageHeader
+          title="SFDataHub Control Panel"
+          subtitle="Overview of services, errors and analytics"
+        />
+      }
     >
       <div className="dashboard-meta">
         <span className="env-badge">STAGING</span>

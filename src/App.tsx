@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import "./App.css";
@@ -9,11 +10,31 @@ import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
 
 function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const closeSidebar = () => setIsSidebarOpen(false);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
   return (
     <div className="app-shell">
-      <Topbar />
+      <Topbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       <div className="app-body">
-        <Sidebar />
+        <Sidebar open={isSidebarOpen} onClose={closeSidebar} />
+        <div
+          className={`sidebar-overlay ${isSidebarOpen ? "is-visible" : ""}`}
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
         <div className="app-content">
           <Routes>
             <Route path="/" element={<DashboardPage />} />

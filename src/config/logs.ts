@@ -1,7 +1,7 @@
-import type { Service } from "./services";
+import type { ServiceId } from "./services";
 
 export type LogLevel = "error" | "warning" | "info";
-export type LogServiceId = Service["id"] | "other";
+export type LogServiceId = ServiceId;
 
 export interface LogEntry {
   id: string;
