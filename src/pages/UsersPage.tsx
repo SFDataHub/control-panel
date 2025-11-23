@@ -1,62 +1,83 @@
 import { useMemo, useState } from "react";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
-import { adminUsersSummary, mockAdminUsers } from "../config/adminUsers";
+import { adminUsersSummary } from "../config/adminUsers";
 import type { AdminRole, AdminStatus, AdminUser, AuthProvider } from "../config/adminUsers";
+import { useAdminUsers } from "../hooks/useAdminUsers";
 
 type RoleFilter = AdminRole | "all";
 type StatusFilter = AdminStatus | "all";
 
 const roleOptions: { label: string; value: RoleFilter }[] = [
   { label: "All roles", value: "all" },
-  { label: "Owner", value: "owner" },
   { label: "Admin", value: "admin" },
-  { label: "Moderator", value: "moderator" },
-  { label: "Viewer", value: "viewer" },
+  { label: "Moderator", value: "mod" },
+  { label: "Creator", value: "creator" },
+  { label: "User", value: "user" },
 ];
 
 const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: "All statuses", value: "all" },
   { label: "Active", value: "active" },
   { label: "Suspended", value: "suspended" },
-  { label: "Invited", value: "invited" },
+  { label: "Banned", value: "banned" },
 ];
 
 const providerLabels: Record<AuthProvider, string> = {
   discord: "Discord",
   google: "Google",
-  github: "GitHub",
-  other: "Other",
 };
 
 const roleLabels: Record<AdminRole, string> = {
-  owner: "Owner",
   admin: "Admin",
-  moderator: "Moderator",
-  viewer: "Viewer",
+  mod: "Moderator",
+  creator: "Creator",
+  user: "User",
 };
 
 const statusLabels: Record<AdminStatus, string> = {
   active: "Active",
   suspended: "Suspended",
-  invited: "Invited",
+  banned: "Banned",
 };
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
-function formatDate(value?: string) {
+function formatDate(value?: string | null) {
   if (!value) {
-    return "–";
+    return "-";
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  const day = date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-  const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-  return `${day} · ${time}`;
+  const day = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${day} at ${time}`;
+}
+
+function getDisplayName(user: AdminUser) {
+  return user.displayName ?? user.profile?.displayName ?? user.userId ?? "Unknown user";
+}
+
+function getProviders(user: AdminUser): AuthProvider[] {
+  const providers = new Set<AuthProvider>();
+  if (user.primaryProvider) {
+    providers.add(user.primaryProvider);
+  }
+  const providerEntries = user.providers ?? {};
+  (Object.keys(providerEntries) as AuthProvider[]).forEach((provider) => providers.add(provider));
+  return Array.from(providers);
 }
 
 export default function UsersPage() {
@@ -64,37 +85,52 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const { users, isLoading, error, refresh } = useAdminUsers();
 
   const filteredUsers = useMemo(() => {
     const query = normalizeSearch(searchTerm);
-    return mockAdminUsers.filter((user) => {
+    return users.filter((user) => {
       if (roleFilter !== "all" && !user.roles.includes(roleFilter)) {
         return false;
       }
       if (statusFilter !== "all" && user.status !== statusFilter) {
         return false;
       }
-      if (query && !`${user.displayName} ${user.id}`.toLowerCase().includes(query)) {
+      const searchableName = getDisplayName(user).toLowerCase();
+      if (query && !`${searchableName} ${user.id}`.toLowerCase().includes(query)) {
         return false;
       }
       return true;
     });
-  }, [roleFilter, statusFilter, searchTerm]);
+  }, [roleFilter, statusFilter, searchTerm, users]);
 
   const summary = useMemo(() => adminUsersSummary(filteredUsers), [filteredUsers]);
 
   return (
     <ContentShell
       title="Admin Users"
-      description="Manage access to SFDataHub admin tools (read-only demo data for now)"
+      description="Read-only view of admin users from Firestore via auth-api"
       headerContent={
         <PageHeader
           title="Admin Users"
-          subtitle="Manage access to SFDataHub admin tools (read-only demo data for now)"
-          hintRight="Demo data only - wiring to real user store later"
+          subtitle="Manage access to SFDataHub admin tools (read-only)"
+          hintRight="Data loaded from auth-api /admin/users"
         />
       }
     >
+      <div className="admin-top">
+        <p className="admin-top__hint">
+          {error
+            ? "Couldn't load admin users - showing demo data."
+            : "Connected to auth-api (read-only)."}
+        </p>
+        <div className="admin-top__actions">
+          {isLoading && <span className="admin-top__status">Loading...</span>}
+          <button type="button" className="btn secondary" onClick={refresh} disabled={isLoading}>
+            Refresh
+          </button>
+        </div>
+      </div>
 
       <div className="admin-filters">
         <label className="filter-control">
@@ -155,11 +191,11 @@ export default function UsersPage() {
             onClick={() => setSelectedUser(user)}
           >
             <div className="user-cell user-cell--name">
-              <p className="user-name">{user.displayName}</p>
+              <p className="user-name">{getDisplayName(user)}</p>
               <p className="user-id">{user.id}</p>
             </div>
             <div className="user-cell user-cell--providers">
-              {user.providers.map((provider) => (
+              {getProviders(user).map((provider) => (
                 <span key={provider} className={`pill provider-pill provider-pill--${provider}`}>
                   {providerLabels[provider]}
                 </span>
@@ -201,8 +237,8 @@ export default function UsersPage() {
           <div className="user-detail-drawer__header">
             <div>
               <p className="monitoring-panel__eyebrow">User details</p>
-              <h2>{selectedUser.displayName}</h2>
-              <p className="user-detail-drawer__id">{selectedUser.id}</p>
+              <h2>{getDisplayName(selectedUser)}</h2>
+              <p className="user-detail-drawer__id">{selectedUser.userId}</p>
             </div>
             <div className="user-detail-drawer__header-meta">
               <span className={`status-chip status-chip--${selectedUser.status}`}>
@@ -217,7 +253,7 @@ export default function UsersPage() {
             <div>
               <p className="user-meta__label">Providers</p>
               <div className="user-detail-drawer__badges">
-                {selectedUser.providers.map((provider) => (
+                {getProviders(selectedUser).map((provider) => (
                   <span key={provider} className={`pill provider-pill provider-pill--${provider}`}>
                     {providerLabels[provider]}
                   </span>

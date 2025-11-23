@@ -669,11 +669,24 @@ button.text-link {
 
 .admin-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .admin-top__hint {
   margin: 0;
+  font-size: 0.85rem;
+  color: #9fb0d4;
+}
+
+.admin-top__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-top__status {
   font-size: 0.85rem;
   color: #9fb0d4;
 }
@@ -802,14 +815,21 @@ button.text-link {
   background: rgba(124, 179, 255, 0.12);
 }
 
-.role-pill--moderator {
+.role-pill--moderator,
+.role-pill--mod {
   color: #ffd166;
   border-color: rgba(255, 209, 102, 0.5);
 }
 
-.role-pill--viewer {
+.role-pill--viewer,
+.role-pill--user {
   color: #c2c9df;
   border-color: rgba(194, 201, 223, 0.4);
+}
+
+.role-pill--creator {
+  color: #7ed3a4;
+  border-color: rgba(126, 211, 164, 0.5);
 }
 
 .status-chip {
@@ -832,6 +852,11 @@ button.text-link {
 .status-chip--suspended {
   color: #ff8273;
   border-color: rgba(255, 130, 115, 0.5);
+}
+
+.status-chip--banned {
+  color: #ff5f56;
+  border-color: rgba(255, 95, 86, 0.6);
 }
 
 .status-chip--invited {
