@@ -19,9 +19,9 @@ export const mockLogs: LogEntry[] = [
     timestamp: "2025-11-23T10:58:00.000Z",
     level: "error",
     service: "auth-api",
-    message: "Failed to refresh JWT for user 'demo-admin'; stale refresh token detected.",
+    message: "Failed to refresh JWT for admin session; stale refresh token detected.",
     details: "Refresh token invalidated by Auth API (tokenHash mismatch).",
-    context: { userId: "demo-admin", retryCount: 3 },
+    context: { userId: "admin-user-01", retryCount: 3 },
   },
   {
     id: "log-002",

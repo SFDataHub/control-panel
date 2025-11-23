@@ -7,7 +7,6 @@ import type {
   AuthProvider,
   ProviderDocEntry,
 } from "../config/adminUsers";
-import { mockAdminUsers } from "../config/adminUsers";
 
 const ADMIN_USERS_PATH = "/admin/users";
 const ALLOWED_ROLES: AdminRole[] = ["admin", "mod", "creator", "user"];
@@ -116,8 +115,8 @@ export function useAdminUsers(): UseAdminUsersResult {
     }
 
     if (!baseUrl) {
-      setUsers(mockAdminUsers);
-      setError("Auth API base URL is missing (VITE_AUTH_BASE_URL). Showing demo data.");
+      setUsers([]);
+      setError("Auth API base URL is missing (VITE_AUTH_BASE_URL).");
       return;
     }
 
@@ -143,16 +142,14 @@ export function useAdminUsers(): UseAdminUsersResult {
       const incoming = Array.isArray(payload?.users) ? payload.users : [];
       const normalized = incoming.map(normalizeAdminUser);
       if (!cancelToken?.cancelled) {
-        setUsers(normalized.length ? normalized : mockAdminUsers);
+        setUsers(normalized);
       }
     } catch (err) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Unexpected error while loading admin users. Showing demo data.";
+        err instanceof Error ? err.message : "Unexpected error while loading admin users.";
       if (!cancelToken?.cancelled) {
         setError(message);
-        setUsers(mockAdminUsers);
+        setUsers([]);
       }
     } finally {
       if (!cancelToken?.cancelled) {

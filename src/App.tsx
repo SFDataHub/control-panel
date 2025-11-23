@@ -8,6 +8,9 @@ import DashboardPage from "./pages/DashboardPage";
 import LogsPage from "./pages/LogsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
+import RequireAdmin from "./components/RequireAdmin";
+import AdminScansUploaded from "./pages/admin/ScansUploaded";
+import AdminFeedback from "./pages/admin/Feedback";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,27 +29,31 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   return (
-    <div className="app-shell">
-      <Topbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <div className="app-body">
-        <Sidebar open={isSidebarOpen} onClose={closeSidebar} />
-        <div
-          className={`sidebar-overlay ${isSidebarOpen ? "is-visible" : ""}`}
-          onClick={closeSidebar}
-          aria-hidden="true"
-        />
-        <div className="app-content">
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/logs" element={<LogsPage />} />
-            <Route path="/apis" element={<ApiStatusPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+    <RequireAdmin>
+      <div className="app-shell">
+        <Topbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="app-body">
+          <Sidebar open={isSidebarOpen} onClose={closeSidebar} />
+          <div
+            className={`sidebar-overlay ${isSidebarOpen ? "is-visible" : ""}`}
+            onClick={closeSidebar}
+            aria-hidden="true"
+          />
+          <div className="app-content">
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/admin/scans-uploaded" element={<AdminScansUploaded />} />
+              <Route path="/admin/feedback" element={<AdminFeedback />} />
+              <Route path="/logs" element={<LogsPage />} />
+              <Route path="/apis" element={<ApiStatusPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
         </div>
       </div>
-    </div>
+    </RequireAdmin>
   );
 }
 

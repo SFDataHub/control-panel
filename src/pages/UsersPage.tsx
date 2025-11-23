@@ -120,9 +120,7 @@ export default function UsersPage() {
     >
       <div className="admin-top">
         <p className="admin-top__hint">
-          {error
-            ? "Couldn't load admin users - showing demo data."
-            : "Connected to auth-api (read-only)."}
+          {error ? "Couldn't load admin users." : "Connected to auth-api (read-only)."}
         </p>
         <div className="admin-top__actions">
           {isLoading && <span className="admin-top__status">Loading...</span>}
