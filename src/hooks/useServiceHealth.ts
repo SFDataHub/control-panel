@@ -11,7 +11,7 @@ export type ServiceHealthEntry = {
   errorMessage?: string;
 };
 
-export type ServiceHealthState = Record<ServiceId, ServiceHealthEntry>;
+export type ServiceHealthState = Partial<Record<ServiceId, ServiceHealthEntry>>;
 
 type UseServiceHealthResult = {
   healthMap: ServiceHealthState;

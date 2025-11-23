@@ -196,7 +196,7 @@ export default function ApiStatusPage() {
                   healthMap[activeService.id]?.status ?? activeService.status ?? "unknown"
                 }`}
               >
-                {statusLabels[healthMap[activeService.id]?.status ?? activeService.status ?? "unknown"]}
+                {statusLabels[healthMap[activeService.id]?.status ?? activeService.status ?? "unknown"]?.label}
               </span>
               <button type="button" className="btn secondary" onClick={() => setActiveService(null)}>
                 Close
