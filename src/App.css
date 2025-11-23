@@ -433,3 +433,187 @@
   color: #c7d4eb;
   font-size: 0.9rem;
 }
+
+.logs-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.logs-header__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b3bfd2;
+}
+
+.logs-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #9fb0d4;
+}
+
+.filter-control select,
+.filter-control input {
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(19, 33, 59, 0.75);
+  color: inherit;
+}
+
+.logs-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.summary-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(19, 33, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.summary-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b3bfd2;
+}
+
+.summary-card strong {
+  display: block;
+  font-size: 1.6rem;
+  margin-top: 0.35rem;
+}
+
+.log-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.log-row {
+  display: grid;
+  grid-template-columns: 180px 120px 160px 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(19, 33, 59, 0.75);
+  color: inherit;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.log-row:hover {
+  border-color: rgba(124, 179, 255, 0.5);
+}
+
+.log-row__timestamp {
+  font-size: 0.8rem;
+  color: #b3bfd2;
+}
+
+.log-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.log-badge--error {
+  color: #ff8273;
+  border-color: rgba(255, 130, 115, 0.5);
+}
+
+.log-badge--warning {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.5);
+}
+
+.log-badge--info {
+  color: #7cb3ff;
+  border-color: rgba(124, 179, 255, 0.5);
+}
+
+.log-row__service {
+  font-weight: 600;
+}
+
+.log-row__message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 5, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 50;
+}
+
+.log-modal__content {
+  width: min(720px, 100%);
+  background: rgba(7, 11, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+}
+
+.log-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.log-modal__eyebrow {
+  margin: 0;
+  color: #9fb0d4;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.log-modal__body {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.log-modal__section-title {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+}
+
+.log-modal pre {
+  background: rgba(19, 33, 59, 0.9);
+  border-radius: 0.75rem;
+  padding: 0.8rem;
+  font-size: 0.85rem;
+  overflow: auto;
+}

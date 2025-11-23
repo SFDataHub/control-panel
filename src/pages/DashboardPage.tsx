@@ -71,15 +71,19 @@ export default function DashboardPage() {
       </div>
 
       <section className="monitoring-panel">
-        <header className="monitoring-panel__header">
-          <div>
-            <p className="monitoring-panel__eyebrow">Errors & Logs</p>
-            <h2>System insight</h2>
-          </div>
-          <Link className="btn secondary" to="/logs">
-            Open Logs
-          </Link>
-        </header>
+      <header className="monitoring-panel__header">
+        <div>
+          <p className="monitoring-panel__eyebrow">Errors & Logs</p>
+          <h2>System insight</h2>
+        </div>
+        <Link
+          className="btn secondary"
+          to="/logs"
+          state={{ defaultFilters: { service: "auth-api", level: "error" } }}
+        >
+          Open Logs
+        </Link>
+      </header>
         <div className="monitoring-panel__grid">
           <div>
             <p className="monitoring-panel__label">Errors last 24h</p>
