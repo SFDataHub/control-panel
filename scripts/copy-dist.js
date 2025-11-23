@@ -29,3 +29,18 @@ const copyRecursive = (source, target) => {
 
 copyRecursive(distDir, docsDir);
 console.log("Copied dist to docs/");
+
+const indexPath = path.join(docsDir, "index.html");
+const fallbackPath = path.join(docsDir, "404.html");
+
+if (fs.existsSync(indexPath)) {
+  fs.copyFileSync(indexPath, fallbackPath);
+  console.log("Created SPA fallback 404.html");
+} else {
+  console.warn("Index file missing; skipping 404 fallback");
+}
+
+const cnameContent = "control-panel.sfdatahub.com";
+const cnamePath = path.join(docsDir, "CNAME");
+fs.writeFileSync(cnamePath, cnameContent, "utf-8");
+console.log("Ensured CNAME for GitHub Pages");
