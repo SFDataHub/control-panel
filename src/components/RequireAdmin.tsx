@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import useAuth from "../hooks/useAuth";
 
-const ADMIN_ROLES = ["admin", "mod", "moderator"];
+const ADMIN_ROLES = ["owner", "admin"];
 
 function GateScreen({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
   return (
@@ -18,59 +18,45 @@ function GateScreen({ title, description, children }: { title: string; descripti
 
 export default function RequireAdmin({ children }: { children: ReactNode }) {
   const { status, user, isLoading, login } = useAuth();
-  const hasAdminRole = (user?.roles ?? []).some((role) =>
-    ADMIN_ROLES.includes(role.toLowerCase()),
-  );
+  const hasAdminRole = (user?.roles ?? []).some((role) => ADMIN_ROLES.includes(role.toLowerCase()));
+  const isChecking = isLoading || status === "idle" || status === "loading";
 
-  if (isLoading || status === "idle" || status === "loading") {
+  if (isChecking) {
     return (
       <GateScreen title="Loading Control Panel" description="Checking your session and permissions">
         <div className="topbar__badge topbar__badge--muted">
           <span className="topbar__spinner" aria-hidden="true" />
-          <span>Loading session…</span>
+          <span>Loading session...</span>
         </div>
       </GateScreen>
     );
   }
 
-  if (status === "unauthenticated") {
-    return (
-      <GateScreen
-        title="Login required"
-        description="Dieses Control Panel ist nur für SFDataHub Admins. Bitte logge dich ein."
-      >
-        <div className="gate-buttons">
-          <button
-            type="button"
-            className="topbar__login topbar__login--discord"
-            onClick={() => login("discord")}
-          >
-            Login Discord
-          </button>
-          <button
-            type="button"
-            className="topbar__login topbar__login--google"
-            onClick={() => login("google")}
-          >
-            Login Google
-          </button>
-        </div>
-      </GateScreen>
-    );
+  if (status === "authenticated" && hasAdminRole) {
+    return children;
   }
 
-  if (!hasAdminRole) {
-    return (
-      <GateScreen
-        title="No access"
-        description="Dein Account ist eingeloggt, hat aber keine Berechtigung für das Control Panel."
-      >
-        <a className="text-link" href="https://sfdatahub.com">
-          Zur Hauptseite
-        </a>
-      </GateScreen>
-    );
-  }
-
-  return children;
+  return (
+    <GateScreen
+      title="Login required"
+      description="Dieses Control Panel ist nur fuer SFDataHub Owner & Admins. Bitte logge dich ein."
+    >
+      <div className="gate-buttons">
+        <button
+          type="button"
+          className="topbar__login topbar__login--discord"
+          onClick={() => login("discord")}
+        >
+          Login Discord
+        </button>
+        <button
+          type="button"
+          className="topbar__login topbar__login--google"
+          onClick={() => login("google")}
+        >
+          Login Google
+        </button>
+      </div>
+    </GateScreen>
+  );
 }

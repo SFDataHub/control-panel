@@ -11,7 +11,7 @@ import {
 
 export type AuthProvider = "discord" | "google";
 
-export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
+export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated" | "error";
 
 export interface AuthUserProviderInfo {
   id: string;
@@ -43,17 +43,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL ?? "").replace(/\/+$/, "");
 
-const SESSION_ENDPOINTS = AUTH_BASE_URL
-  ? [`${AUTH_BASE_URL}/auth/me`, `${AUTH_BASE_URL}/auth/session`]
-  : [];
+const SESSION_ENDPOINT = AUTH_BASE_URL ? `${AUTH_BASE_URL}/auth/me` : "";
 const LOGOUT_ENDPOINT = AUTH_BASE_URL ? `${AUTH_BASE_URL}/auth/logout` : "";
-
-function mapSessionPayload(payload: any): { status: AuthStatus; user: AuthUser | null } {
-  if (payload?.authenticated && payload.user) {
-    return { status: "authenticated", user: payload.user as AuthUser };
-  }
-  return { status: "unauthenticated", user: null };
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("idle");
@@ -61,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isFetchingRef = useRef(false);
 
   const fetchSession = useCallback(async () => {
-    if (!AUTH_BASE_URL) {
+    if (!SESSION_ENDPOINT) {
       console.warn("[Auth] AUTH_BASE_URL not configured; treating as unauthenticated.");
       setUser(null);
       setStatus("unauthenticated");
@@ -72,34 +63,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isFetchingRef.current = true;
     setStatus((prev) => (prev === "authenticated" ? prev : "loading"));
 
-    let lastError: unknown;
-
     try {
-      for (const endpoint of SESSION_ENDPOINTS) {
-        try {
-          const response = await fetch(endpoint, { credentials: "include" });
-          if (!response.ok) {
-            if (response.status === 404 || response.status === 405) {
-              lastError = new Error(`Session endpoint ${endpoint} unavailable (${response.status}).`);
-              continue;
-            }
-            throw new Error(`Failed to fetch session (${response.status}).`);
-          }
-          const data = await response.json();
-          const mapped = mapSessionPayload(data);
-          setUser(mapped.user);
-          setStatus(mapped.status);
-          return;
-        } catch (error) {
-          lastError = error;
+      const response = await fetch(SESSION_ENDPOINT, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        const payloadUser = (data as any)?.user ?? data;
+        if (payloadUser) {
+          setUser(payloadUser as AuthUser);
+          setStatus("authenticated");
+        } else {
+          setUser(null);
+          setStatus("unauthenticated");
         }
+        return;
       }
 
-      if (lastError) {
-        console.error("[Auth] Failed to refresh session.", lastError);
+      if (response.status === 401 || response.status === 403) {
+        setUser(null);
+        setStatus("unauthenticated");
+        return;
       }
+
+      console.error(`[Auth] Session check failed (${response.status}).`);
       setUser(null);
-      setStatus("unauthenticated");
+      setStatus("error");
+    } catch (error) {
+      console.error("[Auth] Failed to refresh session.", error);
+      setUser(null);
+      setStatus("error");
     } finally {
       isFetchingRef.current = false;
     }
