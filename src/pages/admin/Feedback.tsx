@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import ContentShell from "../../components/ContentShell";
 import PageHeader from "../../components/PageHeader";
-import { MessageSquare, Smile, Meh, Frown } from "lucide-react";
+import { Smile, Meh, Frown } from "lucide-react";
 
 type Sentiment = "positive" | "neutral" | "negative";
 
