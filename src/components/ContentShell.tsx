@@ -1,71 +1,52 @@
 import React from "react";
+import Frame from "./ContentFrame/Frame.tsx";
 
 type CSS = React.CSSProperties;
 
-type ContentShellProps = {
-  title: string;
-  description?: string;
+type Props = {
+  hex?: React.ReactNode;
+  title?: string;
   subtitle?: string;
-  children?: React.ReactNode;
-  headerContent?: React.ReactNode;
+  description?: string;
   actions?: React.ReactNode;
   subheader?: React.ReactNode;
-  hex?: React.ReactNode;
+  headerContent?: React.ReactNode;
 
   left?: React.ReactNode;
   right?: React.ReactNode;
+  children: React.ReactNode;  // CENTER (Liste)
 
   rounded?: string;
   padded?: boolean;
-  centerFramed?: boolean;
-  leftWidth?: number | string;
-  rightWidth?: number | string;
+  centerFramed?: boolean;           // zusätzlicher Rahmen um Center
+  leftWidth?: number | string;      // 0 = keine linke Spalte
+  rightWidth?: number | string;     // 0 = keine rechte Spalte
   stickyRails?: boolean;
 
   mode?: "page" | "card";
   outerPadding?: string;
   leftPlacement?: "inside" | "bleed";
 
-  stickyTopbar?: boolean;
-  stickySubheader?: boolean;
-  shellViewportOffset?: string;
-  topbarHeight?: number;
+  // Sticky-Verhalten innerhalb der Shell
+  stickyTopbar?: boolean;           // default: true
+  stickySubheader?: boolean;        // default: true
+  // Höhe der globalen Topbar, die abgezogen wird (via CSS-Variable)
+  shellViewportOffset?: string;     // default: 'var(--app-topbar-h,72px)'
+  // Effektive Shell-Topbar-Höhe (für Subheader-Offset)
+  topbarHeight?: number;            // default: 56
 };
 
 const SURFACE: CSS = { borderColor: "#2B4C73", background: "#1A2F4A" };
-const RAIL: CSS = { borderColor: "#2B4C73", background: "#152A42" };
-
-function Frame({
-  rounded = "rounded-3xl",
-  padded = true,
-  children,
-}: {
-  rounded?: string;
-  padded?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      className={`relative w-full overflow-hidden border ${rounded}`}
-      style={{
-        borderColor: "#2B4C73",
-        background: "#1A2F4A",
-        boxShadow: "0 10px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35)",
-      }}
-    >
-      <div className={`relative ${padded ? "p-4 md:p-6" : ""}`}>{children}</div>
-    </section>
-  );
-}
+const RAIL: CSS    = { borderColor: "#2B4C73", background: "#152A42" };
 
 export default function ContentShell({
+  hex,
   title,
-  description,
   subtitle,
-  headerContent,
+  description,
   actions,
   subheader,
-  hex,
+  headerContent,
   left,
   right,
   children,
@@ -81,13 +62,13 @@ export default function ContentShell({
   outerPadding = "px-4 py-3",
   leftPlacement = "inside",
 
-  stickyTopbar = false,
-  stickySubheader = false,
+  stickyTopbar = true,
+  stickySubheader = true,
   shellViewportOffset = "var(--app-topbar-h,72px)",
   topbarHeight = 56,
-}: ContentShellProps) {
+}: Props) {
+  // Grid-Variablen
   const subtitleText = subtitle ?? description;
-
   const cssVars: CSS = {
     // @ts-ignore
     "--left": typeof leftWidth === "number" ? `${leftWidth}px` : leftWidth,
@@ -95,6 +76,7 @@ export default function ContentShell({
     "--right": typeof rightWidth === "number" ? `${rightWidth}px` : rightWidth,
   };
 
+  // ---------- Top (fix/sticky) ----------
   const TopArea = headerContent ? (
     <div className={stickyTopbar ? "sticky top-0 z-30" : ""}>{headerContent}</div>
   ) : (
@@ -114,15 +96,8 @@ export default function ContentShell({
           style={SURFACE}
         >
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-[#8AA5C4]">SFDataHub</p>
-            <div className="truncate text-sm font-semibold" style={{ color: "#F5F9FF" }}>
-              {title}
-            </div>
-            {subtitleText && (
-              <div className="truncate text-[11px]" style={{ color: "#B0C4D9" }}>
-                {subtitleText}
-              </div>
-            )}
+            {title && <div className="truncate text-sm font-semibold" style={{ color: "#F5F9FF" }}>{title}</div>}
+            {subtitleText && <div className="truncate text-[11px]" style={{ color: "#B0C4D9" }}>{subtitleText}</div>}
           </div>
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
@@ -145,14 +120,17 @@ export default function ContentShell({
     </>
   );
 
+  // Wrapper (Card/Page)
   const Wrap: React.FC<{ children: React.ReactNode }> =
     mode === "card"
       ? ({ children }) => <Frame rounded={rounded} padded={padded}>{children}</Frame>
       : ({ children }) => <div className={`w-full ${outerPadding}`}>{children}</div>;
 
+  // ---------- Body: NUR CENTER scrollt ----------
   const Body = (
     <div className="relative min-h-0 h-full" style={cssVars}>
       <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-[var(--left)_minmax(0,1fr)_var(--right)]">
+        {/* LEFT – statisch */}
         {left ? (
           <aside
             className="rounded-2xl border p-3 md:p-4"
@@ -170,6 +148,7 @@ export default function ContentShell({
           (leftWidth ? <div /> : <div className="hidden md:block" />)
         )}
 
+        {/* CENTER – EINZIGER Scrollbereich (unsichtbarer Scrollbar) */}
         {centerFramed ? (
           <main
             className="rounded-2xl border p-3 md:p-4 min-w-0 h-full overflow-y-auto no-scrollbar"
@@ -183,6 +162,7 @@ export default function ContentShell({
           </main>
         )}
 
+        {/* RIGHT – statisch */}
         {right ? (
           <aside
             className="rounded-2xl border p-3 md:p-4"
@@ -203,13 +183,16 @@ export default function ContentShell({
     </div>
   );
 
+  // ---------- Render: Top fix, darunter nur Body (Center) scrollt ----------
   if (leftPlacement === "bleed" && mode === "card") {
+    // Left außerhalb, Center+Right im Card
     return (
       <div className={`w-full ${outerPadding}`}>
         <div className="flex flex-col h-[calc(100vh_-_var(--app-topbar-h,72px))] min-h-0">
           {TopArea}
           <div className="flex-1 min-h-0" style={cssVars}>
             <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-[var(--left)_minmax(0,1fr)]">
+              {/* Left */}
               {left ? (
                 <aside
                   className="rounded-2xl border p-3 md:p-4"
@@ -225,8 +208,11 @@ export default function ContentShell({
                 </aside>
               ) : (leftWidth ? <div /> : <div className="hidden md:block" />)}
 
+              {/* Rechts: Card mit Body */}
               <Frame rounded={rounded} padded={padded}>
-                <div className="flex-1 min-h-0 h-full">{Body}</div>
+                <div className="flex-1 min-h-0 h-full">
+                  {Body}
+                </div>
               </Frame>
             </div>
           </div>
@@ -235,6 +221,7 @@ export default function ContentShell({
     );
   }
 
+  // Standard (page/card, left inside)
   return (
     <Wrap>
       <div
@@ -242,7 +229,9 @@ export default function ContentShell({
         style={{ height: `calc(100vh - ${shellViewportOffset})` }}
       >
         {TopArea}
-        <div className="flex-1 min-h-0">{Body}</div>
+        <div className="flex-1 min-h-0">
+          {Body}
+        </div>
       </div>
     </Wrap>
   );
