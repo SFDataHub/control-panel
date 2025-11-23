@@ -2,9 +2,9 @@ import { NavLink } from "react-router-dom";
 
 const navItems = [
   { label: "Dashboard", to: "/" },
-  { label: "User Management", to: "/users" },
-  { label: "Audit Logs", to: "/logs" },
-  { label: "API Status", to: "/apis" },
+  { label: "Admin Users", to: "/users" },
+  { label: "Logs", to: "/logs" },
+  { label: "APIs & Services", to: "/apis" },
   { label: "Settings", to: "/settings" },
 ];
 

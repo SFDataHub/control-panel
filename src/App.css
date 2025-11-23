@@ -197,3 +197,239 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+.dashboard-meta {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.env-badge {
+  align-self: flex-start;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(124, 176, 255, 0.15);
+  border: 1px solid rgba(124, 176, 255, 0.4);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9fb0d4;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.service-card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(19, 33, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.service-card__name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.service-card__desc {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #b3bfd2;
+}
+
+.service-card__tags {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.kind-pill {
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kind-pill--light {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.status-badge {
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-badge--ok {
+  color: #5cc9a4;
+  border-color: rgba(92, 201, 164, 0.5);
+}
+
+.status-badge--warning {
+  color: #ffbe42;
+  border-color: rgba(255, 190, 66, 0.5);
+}
+
+.status-badge--unknown {
+  color: #9fb0d4;
+}
+
+.service-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.text-link {
+  color: #7cb3ff;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.text-link--muted {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.monitoring-panel {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(14, 21, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.monitoring-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.monitoring-panel__header h2 {
+  margin: 0;
+}
+
+.monitoring-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.monitoring-panel__label {
+  margin: 0;
+  color: #b3bfd2;
+  font-size: 0.8rem;
+}
+
+.monitoring-panel__value {
+  margin: 0.15rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.monitoring-panel__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9fb0d4;
+}
+
+.monitoring-panel__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #7cb3ff;
+}
+
+.btn {
+  border-radius: 0.75rem;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.btn.secondary {
+  background: rgba(124, 179, 255, 0.15);
+  color: #7cb3ff;
+  border: 1px solid rgba(124, 179, 255, 0.5);
+}
+
+.service-detail-panel {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(14, 21, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.service-detail-panel__header h2 {
+  margin: 0.15rem 0 0;
+}
+
+.service-detail-panel__list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.service-detail-panel__card {
+  padding: 1rem;
+  border-radius: 0.9rem;
+  background: rgba(19, 33, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.service-detail-panel__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.service-detail-panel__name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.service-detail-panel__kind {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9fb0d4;
+}
+
+.service-detail-panel__desc {
+  margin: 0;
+  color: #c7d4eb;
+  font-size: 0.9rem;
+}
