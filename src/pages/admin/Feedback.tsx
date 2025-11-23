@@ -1,5 +1,6 @@
-﻿import React from "react";
-import ContentShell from "../../components/AdminContentShell";
+import React, { useMemo, useState } from "react";
+import ContentShell from "../../components/ContentShell";
+import PageHeader from "../../components/PageHeader";
 import { MessageSquare, Smile, Meh, Frown } from "lucide-react";
 
 type Sentiment = "positive" | "neutral" | "negative";
@@ -19,113 +20,184 @@ const feedback: FeedbackItem[] = [
   {
     id: "FDB-3401",
     user: "@ArcaneScout",
-    channel: "In-app",
+    channel: "in-app",
     submittedAt: "2024-06-19 21:45 UTC",
     sentiment: "positive",
     summary: "Guild Hub revamp",
     detail: "Really like the new roles overview. Could we pin favorite members?",
-    status: "Triaged",
+    status: "triaged",
   },
   {
     id: "FDB-3398",
     user: "@ShadowScribe",
-    channel: "Discord",
+    channel: "discord",
     submittedAt: "2024-06-19 20:18 UTC",
     sentiment: "neutral",
     summary: "Scan delays",
     detail: "Scans seemed slower tonight (~5m). Was there maintenance?",
-    status: "Investigating",
+    status: "investigating",
   },
   {
     id: "FDB-3394",
     user: "@GuildLeader87",
-    channel: "Email",
+    channel: "email",
     submittedAt: "2024-06-19 18:02 UTC",
     sentiment: "negative",
     summary: "Roster export",
     detail: "Export CSV is missing player class data after last update.",
-    status: "Open",
+    status: "open",
   },
   {
     id: "FDB-3389",
     user: "@PotionMaster",
-    channel: "In-app",
+    channel: "in-app",
     submittedAt: "2024-06-19 16:50 UTC",
     sentiment: "positive",
     summary: "New timeline",
     detail: "Timeline filters are great! Would love to save custom presets.",
-    status: "In review",
+    status: "in review",
   },
 ];
 
 export default function AdminFeedback() {
+  const [sentimentFilter, setSentimentFilter] = useState<Sentiment | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [channelFilter, setChannelFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filtered = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+    return feedback.filter((item) => {
+      if (sentimentFilter !== "all" && item.sentiment !== sentimentFilter) return false;
+      if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) return false;
+      if (channelFilter !== "all" && item.channel.toLowerCase() !== channelFilter) return false;
+      if (query && !`${item.summary} ${item.detail} ${item.user}`.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [channelFilter, searchTerm, sentimentFilter, statusFilter]);
+
+  const summary = useMemo(
+    () => ({
+      positive: filtered.filter((f) => f.sentiment === "positive").length,
+      neutral: filtered.filter((f) => f.sentiment === "neutral").length,
+      negative: filtered.filter((f) => f.sentiment === "negative").length,
+      total: filtered.length,
+    }),
+    [filtered],
+  );
+
   return (
     <ContentShell
       title="Feedback overview"
-      subtitle="Monitor and triage incoming player feedback"
-      centerFramed
-      left={<SentimentBreakdown />}
-      right={<FollowUpQueue />}
-      leftWidth={240}
-      rightWidth={280}
-      stickyRails
-      mode="page"
+      description="Monitor and triage incoming player feedback"
+      headerContent={
+        <PageHeader
+          title="Feedback overview"
+          subtitle="Monitor and triage incoming player feedback"
+          hintRight="Sample data"
+        />
+      }
     >
-      <div
-        className="rounded-2xl border"
-        style={{ borderColor: "#1F3150", background: "linear-gradient(180deg, #0f1727 0%, #0b1220 100%)" }}
-      >
-        <header
-          className="flex items-center justify-between border-b px-5 py-4"
-          style={{ borderColor: "#1F3150" }}
-        >
-          <div>
-            <h2 className="text-sm font-semibold text-[#F5F9FF]">
-              Latest submissions
-            </h2>
-            <p className="text-xs text-[#B0C4D9]">
-              Sorted by most recent feedback across all channels.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs"
-            style={{ borderColor: "#1F3150", color: "#F5F9FF" }}
-          >
-            <MessageSquare className="h-4 w-4 text-[#5C8BC6]" aria-hidden="true" />
+      <div className="admin-top">
+        <p className="admin-top__hint">Realtime wiring möglich; aktuell Demo-Daten.</p>
+        <div className="admin-top__actions">
+          <button type="button" className="btn secondary">
             Export thread
           </button>
-        </header>
-        <ul className="divide-y" style={{ borderColor: "#1F3150" }}>
-          {feedback.map((item) => (
-            <li
-              key={item.id}
-              className="grid grid-cols-[120px_160px_minmax(0,1fr)_120px] gap-4 px-5 py-4"
-            >
+        </div>
+      </div>
+
+      <div className="admin-filters">
+        <label className="filter-control">
+          <span>Sentiment</span>
+          <select value={sentimentFilter} onChange={(event) => setSentimentFilter(event.target.value as Sentiment | "all")}>
+            <option value="all">All</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+        </label>
+        <label className="filter-control">
+          <span>Status</span>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="triaged">Triaged</option>
+            <option value="investigating">Investigating</option>
+            <option value="in review">In review</option>
+          </select>
+        </label>
+        <label className="filter-control">
+          <span>Channel</span>
+          <select value={channelFilter} onChange={(event) => setChannelFilter(event.target.value.toLowerCase())}>
+            <option value="all">All</option>
+            <option value="in-app">In-app</option>
+            <option value="discord">Discord</option>
+            <option value="email">Email</option>
+          </select>
+        </label>
+        <label className="filter-control filter-control--grow">
+          <span>Search</span>
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Stichwort, User oder Channel"
+          />
+        </label>
+      </div>
+
+      <div className="admin-summary">
+        <div className="summary-card">
+          <p>Positive</p>
+          <strong>{summary.positive}</strong>
+        </div>
+        <div className="summary-card">
+          <p>Neutral</p>
+          <strong>{summary.neutral}</strong>
+        </div>
+        <div className="summary-card">
+          <p>Negative</p>
+          <strong>{summary.negative}</strong>
+        </div>
+        <div className="summary-card">
+          <p>Total</p>
+          <strong>{summary.total}</strong>
+        </div>
+      </div>
+
+      <div className="page-grid">
+        <SentimentBreakdown />
+        <FollowUpQueue />
+      </div>
+
+      <div className="log-table">
+        {filtered.map((item) => (
+          <article key={item.id} className="log-row">
+            <div className="log-row__head">
               <div>
-                <div className="font-mono text-xs text-[#8AA5C4]">{item.id}</div>
-                <div className="text-sm text-[#F5F9FF]">{item.user}</div>
-                <div className="text-xs text-[#B0C4D9]">{item.channel}</div>
+                <p className="user-id">{item.id}</p>
+                <p className="log-row__service">{item.summary}</p>
               </div>
-              <div className="text-xs text-[#B0C4D9]">{item.submittedAt}</div>
-              <div>
-                <div className="text-sm font-semibold text-[#F5F9FF]">
-                  {item.summary}
-                </div>
-                <div className="mt-1 text-xs text-[#B0C4D9]">{item.detail}</div>
-              </div>
-              <div className="flex flex-col items-end gap-2 text-right">
+              <div className="log-row__body">
                 <SentimentBadge value={item.sentiment} />
-                <span
-                  className="rounded-full border px-3 py-1 text-[11px] uppercase tracking-wide"
-                  style={{ borderColor: "#1F3150", color: "#F5F9FF" }}
-                >
-                  {item.status}
-                </span>
+                <span className="log-badge">{item.status}</span>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+            <div className="log-row__body">
+              <span className="log-row__message">{item.detail}</span>
+            </div>
+            <div className="log-row__body">
+              <span className="log-row__timestamp">Channel: {item.channel}</span>
+              <span className="log-row__timestamp">Submitted: {item.submittedAt}</span>
+              <span className="log-row__timestamp">User: {item.user}</span>
+            </div>
+          </article>
+        ))}
+        {filtered.length === 0 && (
+          <div className="placeholder-card">
+            <p>No feedback matches your filters.</p>
+          </div>
+        )}
       </div>
     </ContentShell>
   );
@@ -141,12 +213,8 @@ function SentimentBadge({ value }: { value: Sentiment }) {
   const { label, color, Icon } = map[value];
 
   return (
-    <span
-      className="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-      style={{ background: "#0f1a2c", color }}
-    >
-      <Icon className="h-4 w-4" aria-hidden="true" />
-      {label}
+    <span className="log-badge" style={{ color, borderColor: color }}>
+      <Icon className="h-4 w-4" aria-hidden="true" /> {label}
     </span>
   );
 }
@@ -159,75 +227,36 @@ function SentimentBreakdown() {
   ];
 
   return (
-    <aside className="space-y-4 text-sm">
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-[#8AA5C4]">
-          Sentiment mix
-        </h3>
-        <ul className="mt-3 space-y-2">
-          {entries.map((entry) => (
-            <li
-              key={entry.label}
-              className="flex items-center justify-between rounded-xl border px-3 py-2"
-              style={{ borderColor: "#1F3150", background: "#0f1a2c" }}
-            >
-              <span className="text-xs text-[#B0C4D9]">{entry.label}</span>
-              <span className="text-sm font-semibold" style={{ color: entry.color }}>
-                {entry.value}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-[#8AA5C4]">
-          Last sync
-        </h3>
-        <p className="mt-2 text-xs text-[#B0C4D9]">
-          Feedback sources synced 12 minutes ago. Next pull scheduled in 5 minutes.
-        </p>
-      </div>
-    </aside>
+    <div className="placeholder-card">
+      <h3>Sentiment mix</h3>
+      <ul className="content-shell__list">
+        {entries.map((entry) => (
+          <li key={entry.label} style={{ color: entry.color }}>
+            {entry.label}: {entry.value}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
 function FollowUpQueue() {
   const actions = [
-    { label: "Assign to product", detail: "2 waiting", color: "#5C8BC6" },
-    { label: "Reply templates", detail: "Updated yesterday", color: "#8AA5C4" },
-    { label: "Quarterly NPS", detail: "Survey closes in 3 days", color: "#F9A825" },
+    { label: "Assign to product", detail: "2 waiting" },
+    { label: "Reply templates", detail: "Updated yesterday" },
+    { label: "Quarterly NPS", detail: "Survey closes in 3 days" },
   ];
 
   return (
-    <aside className="space-y-4 text-sm">
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-[#8AA5C4]">
-          Follow-ups
-        </h3>
-        <ul className="mt-3 space-y-2">
-          {actions.map((action) => (
-            <li
-              key={action.label}
-              className="rounded-xl border px-4 py-3"
-              style={{ borderColor: "#1F3150", background: "#0f1a2c" }}
-            >
-              <div className="text-sm font-semibold text-[#F5F9FF]">{action.label}</div>
-              <div className="mt-1 text-xs" style={{ color: action.color }}>
-                {action.detail}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-[#8AA5C4]">
-          Insights
-        </h3>
-        <p className="mt-2 text-xs text-[#B0C4D9]">
-          Trending requests highlight roster export improvements and saved filter presets.
-        </p>
-      </div>
-    </aside>
+    <div className="placeholder-card">
+      <h3>Follow-ups</h3>
+      <ul className="content-shell__list">
+        {actions.map((action) => (
+          <li key={action.label}>
+            <strong>{action.label}</strong> – {action.detail}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
-
