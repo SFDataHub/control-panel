@@ -114,8 +114,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn(`[Auth] Cannot initiate ${provider} login without AUTH_BASE_URL.`);
       return;
     }
-    const redirect = encodeURIComponent(window.location.href);
-    window.location.href = `${AUTH_BASE_URL}/auth/${provider}?redirect=${redirect}`;
+    const url = new URL(`/auth/${provider}/login`, AUTH_BASE_URL);
+    url.searchParams.set("redirect", window.location.href);
+    window.location.href = url.toString();
   }, []);
 
   const logout = useCallback(async () => {
