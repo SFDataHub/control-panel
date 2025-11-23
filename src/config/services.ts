@@ -2,6 +2,19 @@ export type ServiceKind = "api" | "db" | "analytics" | "worker" | "other";
 export type ServiceStatus = "ok" | "degraded" | "down" | "unknown";
 export type ServiceId = "auth-api" | "scan-import-api" | "firestore" | "goatcounter" | "other";
 
+export type ServiceHealthCheck =
+  | {
+      type: "http";
+      url: string;
+      timeoutMs?: number;
+    }
+  | {
+      type: "firestore";
+      firestoreCollection: string;
+      firestoreDocument?: string;
+      timeoutMs?: number;
+    };
+
 export type Service = {
   id: ServiceId;
   name: string;
@@ -11,6 +24,7 @@ export type Service = {
   url?: string;
   docsUrl?: string;
   owner?: string;
+  healthCheck?: ServiceHealthCheck;
 };
 
 export const coreServices: Service[] = [
@@ -24,6 +38,11 @@ export const coreServices: Service[] = [
     status: "ok",
     docsUrl: "",
     owner: "Backend",
+    healthCheck: {
+      type: "http",
+      url: "https://authapi-57ravjntpa-ew.a.run.app/health",
+      timeoutMs: 5000,
+    },
   },
   {
     id: "scan-import-api",
@@ -43,6 +62,12 @@ export const coreServices: Service[] = [
     status: "ok",
     docsUrl: "",
     owner: "Infra",
+    healthCheck: {
+      type: "firestore",
+      firestoreCollection: "stats_public",
+      firestoreDocument: "toplists_bundle_v1",
+      timeoutMs: 5000,
+    },
   },
   {
     id: "goatcounter",

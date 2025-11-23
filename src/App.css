@@ -596,6 +596,18 @@
   color: #edf2ff;
 }
 
+.service-card__meta {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  color: #9fb0d4;
+}
+
+.service-card__error {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: #ff8273;
+}
+
 .service-card--catalog .service-card__actions {
   margin-top: 0.25rem;
 }

@@ -5,6 +5,7 @@ import PageHeader from "../components/PageHeader";
 import { coreServices } from "../config/services";
 import type { Service, ServiceKind, ServiceStatus } from "../config/services";
 import type { LogServiceId } from "../config/logs";
+import useServiceHealth from "../hooks/useServiceHealth";
 
 type KindFilter = ServiceKind | "all";
 type StatusFilter = ServiceStatus | "all";
@@ -46,6 +47,7 @@ function normalizeSearch(value: string) {
 
 export default function ApiStatusPage() {
   const navigate = useNavigate();
+  const { healthMap, isLoading } = useServiceHealth(coreServices);
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +57,9 @@ export default function ApiStatusPage() {
     const query = normalizeSearch(searchTerm);
 
     return coreServices.filter((service) => {
+      const healthStatus = healthMap[service.id]?.status;
+      const effectiveStatus = healthStatus ?? service.status ?? "unknown";
+
       if (kindFilter !== "all") {
         if (kindFilter === "other") {
           if (service.kind !== "other" && service.kind !== "worker") {
@@ -65,8 +70,7 @@ export default function ApiStatusPage() {
         }
       }
 
-      const serviceStatus = service.status ?? "unknown";
-      if (statusFilter !== "all" && serviceStatus !== statusFilter) {
+      if (statusFilter !== "all" && effectiveStatus !== statusFilter) {
         return false;
       }
 
@@ -76,7 +80,7 @@ export default function ApiStatusPage() {
 
       return true;
     });
-  }, [kindFilter, statusFilter, searchTerm]);
+  }, [kindFilter, statusFilter, searchTerm, healthMap]);
 
   const openLogs = (serviceId: LogServiceId) => {
     navigate("/logs", { state: { defaultFilters: { service: serviceId } } });
@@ -130,13 +134,18 @@ export default function ApiStatusPage() {
 
       <div className="service-grid">
         {filteredServices.map((service) => {
-          const status = safeStatus(service);
+          const health = healthMap[service.id];
+          const status = health ? statusLabels[health.status] : safeStatus(service);
           return (
             <article key={service.id} className="service-card service-card--catalog">
               <header className="service-card__head">
                 <div>
                   <p className="service-card__name">{service.name}</p>
                   <p className="service-card__desc">{service.description}</p>
+                  {health?.latencyMs !== undefined && (
+                    <p className="service-card__meta">Latency: {health.latencyMs} ms</p>
+                  )}
+                  {isLoading && !health && <p className="service-card__meta">Checking health…</p>}
                 </div>
                 <div className="service-card__status">
                   <span className={`status-badge status-badge--${status.tone}`}>{status.label}</span>
@@ -181,9 +190,18 @@ export default function ApiStatusPage() {
               <h2>{activeService.name}</h2>
               <p className="service-detail-drawer__description">{activeService.description}</p>
             </div>
-            <button type="button" className="btn secondary" onClick={() => setActiveService(null)}>
-              Close
-            </button>
+            <div className="service-detail-drawer__header-meta">
+              <span
+                className={`status-chip status-chip--${
+                  healthMap[activeService.id]?.status ?? activeService.status ?? "unknown"
+                }`}
+              >
+                {statusLabels[healthMap[activeService.id]?.status ?? activeService.status ?? "unknown"]}
+              </span>
+              <button type="button" className="btn secondary" onClick={() => setActiveService(null)}>
+                Close
+              </button>
+            </div>
           </div>
           <div className="service-detail-drawer__meta">
             <div>
@@ -192,7 +210,9 @@ export default function ApiStatusPage() {
             </div>
             <div>
               <span>Status</span>
-              <strong>{safeStatus(activeService).label}</strong>
+              <strong>{(activeService && (healthMap[activeService.id]?.status
+                ? statusLabels[healthMap[activeService.id]!.status]
+                : safeStatus(activeService))).label}</strong>
             </div>
             <div>
               <span>Owner</span>
@@ -223,6 +243,11 @@ export default function ApiStatusPage() {
             How to debug issues for this service: capture failing requests, check logs with the prefilled filter,
             and loop in the listed owner if escalations are needed.
           </p>
+          {activeService && healthMap[activeService.id]?.errorMessage && (
+            <p className="service-detail-drawer__hint">
+              Last check failed: {healthMap[activeService.id]!.errorMessage}
+            </p>
+          )}
           <div className="service-detail-drawer__footer">
             <button type="button" className="btn secondary" onClick={() => openLogs(activeService.id)}>
               View logs for this service

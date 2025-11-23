@@ -3,12 +3,13 @@ import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import { coreServices } from "../config/services";
 import type { Service } from "../config/services";
+import useServiceHealth from "../hooks/useServiceHealth";
 
-const serviceStatus: Record<string, { label: string; tone: "ok" | "warning" | "unknown" }> = {
-  "auth-api": { label: "OK", tone: "ok" },
-  "scan-import-api": { label: "Unknown", tone: "unknown" },
-  firestore: { label: "OK", tone: "ok" },
-  goatcounter: { label: "OK", tone: "ok" },
+const statusTone: Record<string, { label: string; tone: "ok" | "warning" | "down" | "unknown" }> = {
+  ok: { label: "OK", tone: "ok" },
+  degraded: { label: "Degraded", tone: "warning" },
+  down: { label: "Down", tone: "down" },
+  unknown: { label: "Unknown", tone: "unknown" },
 };
 
 const serviceKindLabels: Record<Service["kind"], string> = {
@@ -29,6 +30,8 @@ const errorsSummary = {
 };
 
 export default function DashboardPage() {
+  const { healthMap, isLoading } = useServiceHealth(coreServices);
+
   return (
     <ContentShell
       title="SFDataHub Control Panel"
@@ -46,13 +49,22 @@ export default function DashboardPage() {
 
       <div className="service-grid">
         {coreServices.map((service) => {
-          const status = serviceStatus[service.id] ?? { label: "Unknown", tone: "unknown" };
+          const health = healthMap[service.id];
+          const statusKey = health?.status ?? service.status ?? "unknown";
+          const status = statusTone[statusKey] ?? statusTone.unknown;
           return (
             <article key={service.id} className="service-card">
               <div className="service-card__head">
                 <div>
                   <p className="service-card__name">{service.name}</p>
                   <p className="service-card__desc">{service.description}</p>
+                  {isLoading && !health && <p className="service-card__meta">Checking health…</p>}
+                  {health?.latencyMs !== undefined && (
+                    <p className="service-card__meta">Latency: {health.latencyMs} ms</p>
+                  )}
+                  {health?.checkedAt && (
+                    <p className="service-card__meta">Last check: {new Date(health.checkedAt).toLocaleTimeString()}</p>
+                  )}
                 </div>
                 <span className={`status-badge status-badge--${status.tone}`}>{status.label}</span>
               </div>
@@ -80,19 +92,19 @@ export default function DashboardPage() {
       </div>
 
       <section className="monitoring-panel">
-      <header className="monitoring-panel__header">
-        <div>
-          <p className="monitoring-panel__eyebrow">Errors & Logs</p>
-          <h2>System insight</h2>
-        </div>
-        <Link
-          className="btn secondary"
-          to="/logs"
-          state={{ defaultFilters: { service: "auth-api", level: "error" } }}
-        >
-          Open Logs
-        </Link>
-      </header>
+        <header className="monitoring-panel__header">
+          <div>
+            <p className="monitoring-panel__eyebrow">Errors & Logs</p>
+            <h2>System insight</h2>
+          </div>
+          <Link
+            className="btn secondary"
+            to="/logs"
+            state={{ defaultFilters: { service: "auth-api", level: "error" } }}
+          >
+            Open Logs
+          </Link>
+        </header>
         <div className="monitoring-panel__grid">
           <div>
             <p className="monitoring-panel__label">Errors last 24h</p>
