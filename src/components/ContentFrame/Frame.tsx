@@ -19,9 +19,9 @@ export default function Frame({
     <section
       className={`relative w-full overflow-hidden border ${rounded}`}
       style={{
-        borderColor: "#2B4C73",
-        background: "#1A2F4A",
-        boxShadow: "0 10px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35)",
+        borderColor: "#1F3150",
+        background: "linear-gradient(180deg, #0f1624 0%, #0b111d 100%)",
+        boxShadow: "0 24px 60px rgba(5, 10, 24, 0.6)",
       }}
     >
       <div className={`relative ${padded ? "p-4 md:p-6" : ""}`}>{children}</div>

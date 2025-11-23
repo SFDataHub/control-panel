@@ -21,17 +21,17 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
-import ContentShell from "../../components/ContentShell";
+import ContentShell from "../../components/AdminContentShell";
 import { db } from "../../lib/firebase";
 
 const surfaceStyle: React.CSSProperties = {
-  background: "#152A42",
-  borderColor: "#2B4C73",
+  background: "linear-gradient(180deg, #0f1727 0%, #0b1220 100%)",
+  borderColor: "#1F3150",
 };
 
 const insetSurfaceStyle: React.CSSProperties = {
-  background: "#1A2F4A",
-  borderColor: "#2B4C73",
+  background: "linear-gradient(180deg, #0f1a2c 0%, #0b111d 100%)",
+  borderColor: "#1F3150",
 };
 
 type UploadStatus = "success" | "failed" | "processing" | "queued" | "unknown";
@@ -426,7 +426,7 @@ export default function AdminScansUploaded() {
         </section>
 
         <section className="rounded-2xl border" style={surfaceStyle}>
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: "#2B4C73" }}>
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: "#1F3150" }}>
             <div>
               <h2 className="text-sm font-semibold text-[#F5F9FF]">Recent uploads</h2>
               <p className="text-xs text-[#B0C4D9]">
@@ -449,7 +449,7 @@ export default function AdminScansUploaded() {
               )}
             </div>
           </header>
-          <div className="grid grid-cols-[150px_130px_minmax(0,1fr)_minmax(0,1fr)_110px_110px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ borderColor: "#2B4C73", color: "#D6E4F7" }}>
+          <div className="grid grid-cols-[150px_130px_minmax(0,1fr)_minmax(0,1fr)_110px_110px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ borderColor: "#1F3150", color: "#D6E4F7" }}>
             <span>ID</span>
             <span>Status</span>
             <span>Uploader</span>
@@ -462,7 +462,7 @@ export default function AdminScansUploaded() {
               <li
                 key={row.id}
                 className="grid grid-cols-[150px_130px_minmax(0,1fr)_minmax(0,1fr)_110px_110px] gap-4 border-b px-5 py-3 text-sm"
-                style={{ borderColor: "#2B4C73", color: "#FFFFFF" }}
+                style={{ borderColor: "#1F3150", color: "#FFFFFF" }}
               >
                 <span className="font-mono text-xs text-[#8AA5C4]">{row.id}</span>
                 <span>
@@ -513,7 +513,7 @@ function LeftRail({
             type="button"
             onClick={onRefresh}
             className="inline-flex items-center gap-1 rounded-xl border px-3 py-1 text-xs"
-            style={{ borderColor: "#2B4C73", color: "#F5F9FF" }}
+            style={{ borderColor: "#1F3150", color: "#F5F9FF" }}
             disabled={refreshing}
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} aria-hidden="true" />

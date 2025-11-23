@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import ContentShell from "../../components/ContentShell";
+import ContentShell from "../../components/AdminContentShell";
 import { MessageSquare, Smile, Meh, Frown } from "lucide-react";
 
 type Sentiment = "positive" | "neutral" | "negative";
@@ -73,11 +73,11 @@ export default function AdminFeedback() {
     >
       <div
         className="rounded-2xl border"
-        style={{ borderColor: "#2B4C73", background: "#152A42" }}
+        style={{ borderColor: "#1F3150", background: "linear-gradient(180deg, #0f1727 0%, #0b1220 100%)" }}
       >
         <header
           className="flex items-center justify-between border-b px-5 py-4"
-          style={{ borderColor: "#2B4C73" }}
+          style={{ borderColor: "#1F3150" }}
         >
           <div>
             <h2 className="text-sm font-semibold text-[#F5F9FF]">
@@ -90,13 +90,13 @@ export default function AdminFeedback() {
           <button
             type="button"
             className="flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs"
-            style={{ borderColor: "#2B4C73", color: "#F5F9FF" }}
+            style={{ borderColor: "#1F3150", color: "#F5F9FF" }}
           >
             <MessageSquare className="h-4 w-4 text-[#5C8BC6]" aria-hidden="true" />
             Export thread
           </button>
         </header>
-        <ul className="divide-y" style={{ borderColor: "#2B4C73" }}>
+        <ul className="divide-y" style={{ borderColor: "#1F3150" }}>
           {feedback.map((item) => (
             <li
               key={item.id}
@@ -118,7 +118,7 @@ export default function AdminFeedback() {
                 <SentimentBadge value={item.sentiment} />
                 <span
                   className="rounded-full border px-3 py-1 text-[11px] uppercase tracking-wide"
-                  style={{ borderColor: "#2B4C73", color: "#F5F9FF" }}
+                  style={{ borderColor: "#1F3150", color: "#F5F9FF" }}
                 >
                   {item.status}
                 </span>
@@ -143,7 +143,7 @@ function SentimentBadge({ value }: { value: Sentiment }) {
   return (
     <span
       className="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-      style={{ background: "#1A2F4A", color }}
+      style={{ background: "#0f1a2c", color }}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
       {label}
@@ -169,7 +169,7 @@ function SentimentBreakdown() {
             <li
               key={entry.label}
               className="flex items-center justify-between rounded-xl border px-3 py-2"
-              style={{ borderColor: "#2B4C73", background: "#1A2F4A" }}
+              style={{ borderColor: "#1F3150", background: "#0f1a2c" }}
             >
               <span className="text-xs text-[#B0C4D9]">{entry.label}</span>
               <span className="text-sm font-semibold" style={{ color: entry.color }}>
@@ -209,7 +209,7 @@ function FollowUpQueue() {
             <li
               key={action.label}
               className="rounded-xl border px-4 py-3"
-              style={{ borderColor: "#2B4C73", background: "#1A2F4A" }}
+              style={{ borderColor: "#1F3150", background: "#0f1a2c" }}
             >
               <div className="text-sm font-semibold text-[#F5F9FF]">{action.label}</div>
               <div className="mt-1 text-xs" style={{ color: action.color }}>
