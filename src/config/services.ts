@@ -34,13 +34,13 @@ export const coreServices: Service[] = [
     kind: "api",
     description:
       "Handles login via Discord/Google and issues JWTs so SFDataHub can gate session information.",
-    url: "https://authapi-57ravjntpa-ew.a.run.app",
+    url: "https://auth.sfdatahub.com",
     status: "ok",
     docsUrl: "",
     owner: "Backend",
     healthCheck: {
       type: "http",
-      url: "https://authapi-57ravjntpa-ew.a.run.app/health",
+      url: "https://auth.sfdatahub.com/health",
       timeoutMs: 5000,
     },
   },
