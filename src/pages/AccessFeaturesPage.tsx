@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
-import useAccessControl, { AccessGroupRecord, FeatureAccessRecord } from "../hooks/useAccessControl";
+import useAccessControl, { type AccessGroupRecord, type FeatureAccessRecord } from "../hooks/useAccessControl";
 import type { AccessRole, FeatureAccessStatus } from "../types/accessControl";
 
 type FeatureStatusFilter = FeatureAccessStatus | "all";
