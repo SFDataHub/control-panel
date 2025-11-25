@@ -8,6 +8,7 @@ import DashboardPage from "./pages/DashboardPage";
 import LogsPage from "./pages/LogsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
+import AccessFeaturesPage from "./pages/AccessFeaturesPage";
 import RequireAdmin from "./components/RequireAdmin";
 import AdminScansUploaded from "./pages/admin/ScansUploaded";
 import AdminFeedback from "./pages/admin/Feedback";
@@ -43,6 +44,7 @@ function App() {
           <div className="app-content">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
+              <Route path="/access" element={<AccessFeaturesPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/admin/scans-uploaded" element={<AdminScansUploaded />} />
               <Route path="/admin/todo" element={<TodoPage />} />

@@ -8,6 +8,7 @@ type SidebarProps = {
 const navItems = [
   { label: "Dashboard", to: "/" },
   { label: "Admin Users", to: "/users" },
+  { label: "Access & Features", to: "/access" },
   { label: "Scans uploaded", to: "/admin/scans-uploaded" },
   { label: "Todo-Liste", to: "/admin/todo" },
   { label: "Feedback overview", to: "/admin/feedback" },
