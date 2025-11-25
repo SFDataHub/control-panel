@@ -117,6 +117,7 @@ export default function AccessFeaturesPage() {
             ? "Could not load access data from Firestore."
             : "Live snapshot from feature_access and access_groups (read-only)."}
         </p>
+        {error && <p className="admin-top__hint">Debug: {error}</p>}
         <div className="admin-top__actions">
           {isLoading && <span className="admin-top__status">Loading...</span>}
           <button type="button" className="btn secondary" onClick={refresh} disabled={isLoading}>

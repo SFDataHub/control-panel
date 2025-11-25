@@ -165,6 +165,7 @@ export default function useAccessControl(): UseAccessControlResult {
       setAccessGroups(normalizedGroups);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load access control collections.";
+      console.error("[AccessControl] Failed to load access data:", err);
       if (!cancelToken?.cancelled) {
         setError(message);
         setFeatures([]);
