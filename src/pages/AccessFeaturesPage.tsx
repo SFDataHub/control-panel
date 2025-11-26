@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import useAccessControl, { type AccessGroupRecord, type FeatureAccessRecord } from "../hooks/useAccessControl";
+import { updateFeatureAccess } from "../lib/adminAccessControlApi";
 import type { AccessRole, FeatureAccessStatus } from "../types/accessControl";
 
 type FeatureStatusFilter = FeatureAccessStatus | "all";
@@ -31,6 +32,8 @@ const roleLabels: Record<string, string> = {
   developer: "Developer",
   user: "User",
 };
+
+const editableRoles: AccessRole[] = ["admin", "moderator", "developer", "user"];
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
@@ -83,6 +86,10 @@ export default function AccessFeaturesPage() {
   const [featureSearch, setFeatureSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FeatureStatusFilter>("all");
   const [groupSearch, setGroupSearch] = useState("");
+  const [editingFeature, setEditingFeature] = useState<FeatureAccessRecord | null>(null);
+  const [draft, setDraft] = useState<FeatureAccessRecord | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredFeatures = useMemo(() => {
     const query = normalizeSearch(featureSearch);
@@ -98,6 +105,77 @@ export default function AccessFeaturesPage() {
     const query = normalizeSearch(groupSearch);
     return accessGroups.filter((group) => matchesGroup(group, query));
   }, [accessGroups, groupSearch]);
+
+  const groupOptions = useMemo(
+    () => accessGroups.map((group) => ({ id: group.id, label: group.label ?? group.id })),
+    [accessGroups],
+  );
+
+  const startEdit = (feature: FeatureAccessRecord) => {
+    setEditingFeature(feature);
+    setDraft({ ...feature });
+    setSaveError(null);
+  };
+
+  const closeEdit = () => {
+    setEditingFeature(null);
+    setDraft(null);
+    setSaveError(null);
+  };
+
+  const toggleDraftArray = (key: "allowedRoles" | "allowedGroups", value: string) => {
+    if (!draft) return;
+    const current = draft[key] ?? [];
+    const nextSet = new Set(current);
+    if (nextSet.has(value)) {
+      nextSet.delete(value);
+    } else {
+      nextSet.add(value);
+    }
+    setDraft({ ...draft, [key]: Array.from(nextSet) });
+  };
+
+  const hasChanges = useMemo(() => {
+    if (!draft || !editingFeature) return false;
+
+    const arraysEqual = (a?: string[], b?: string[]) => {
+      const one = a ?? [];
+      const two = b ?? [];
+      if (one.length !== two.length) return false;
+      return one.every((value) => two.includes(value));
+    };
+
+    return (
+      draft.status !== editingFeature.status ||
+      draft.minRole !== editingFeature.minRole ||
+      draft.showInSidebar !== editingFeature.showInSidebar ||
+      draft.showInTopbar !== editingFeature.showInTopbar ||
+      !arraysEqual(draft.allowedRoles as string[] | undefined, editingFeature.allowedRoles as string[] | undefined) ||
+      !arraysEqual(draft.allowedGroups, editingFeature.allowedGroups)
+    );
+  }, [draft, editingFeature]);
+
+  const handleSave = async () => {
+    if (!draft || !editingFeature) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await updateFeatureAccess(editingFeature.id, {
+        status: draft.status,
+        minRole: draft.minRole,
+        allowedRoles: draft.allowedRoles,
+        allowedGroups: draft.allowedGroups,
+        showInSidebar: draft.showInSidebar,
+        showInTopbar: draft.showInTopbar,
+      });
+      closeEdit();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save feature.";
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <ContentShell
@@ -173,6 +251,7 @@ export default function AccessFeaturesPage() {
                   <th>Roles / Groups</th>
                   <th>Visibility</th>
                   <th>Updated</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -228,6 +307,15 @@ export default function AccessFeaturesPage() {
                       </td>
                       <td className="access-table__meta">
                         {formatTimestamp(feature.updatedAt ?? feature.createdAt)}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="text-link"
+                          onClick={() => startEdit(feature)}
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   );
@@ -319,6 +407,134 @@ export default function AccessFeaturesPage() {
           )}
         </section>
       </div>
+
+      {draft && editingFeature && (
+        <div className="log-modal" role="dialog" aria-modal="true" aria-label="Edit feature access">
+          <div className="log-modal__content access-modal">
+            <header className="log-modal__header">
+              <div>
+                <p className="log-modal__eyebrow">Edit feature</p>
+                <h2 className="access-modal__title">{editingFeature.titleKey}</h2>
+                <p className="access-table__meta">{editingFeature.route}</p>
+              </div>
+              <button type="button" className="text-link" onClick={closeEdit} disabled={isSaving}>
+                Close
+              </button>
+            </header>
+
+            {saveError && <div className="error-banner">Failed to save: {saveError}</div>}
+
+            <div className="access-modal__form">
+              <label className="filter-control">
+                <span>Status</span>
+                <select
+                  value={draft.status}
+                  onChange={(event) =>
+                    setDraft({ ...draft, status: event.target.value as FeatureAccessStatus })
+                  }
+                >
+                  {statusOptions
+                    .filter((option) => option.value !== "all")
+                    .map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                </select>
+              </label>
+
+              <label className="filter-control">
+                <span>Min role</span>
+                <select
+                  value={draft.minRole}
+                  onChange={(event) => setDraft({ ...draft, minRole: event.target.value as AccessRole })}
+                >
+                  {editableRoles.map((role) => (
+                    <option key={role} value={role}>
+                      {formatRole(role)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="filter-control">
+                <span>Allowed roles</span>
+                <div className="access-modal__chips">
+                  {editableRoles.map((role) => {
+                    const selected = draft.allowedRoles?.includes(role) ?? false;
+                    return (
+                      <button
+                        type="button"
+                        key={role}
+                        className={`pill role-pill role-pill--${role} ${selected ? "" : "pill--ghost"}`}
+                        onClick={() => toggleDraftArray("allowedRoles", role)}
+                        aria-pressed={selected}
+                      >
+                        {formatRole(role)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="filter-control">
+                <span>Allowed groups</span>
+                <div className="access-modal__chips">
+                  {groupOptions.map((group) => {
+                    const selected = draft.allowedGroups?.includes(group.id) ?? false;
+                    return (
+                      <button
+                        type="button"
+                        key={group.id}
+                        className={`pill access-pill ${selected ? "" : "pill--ghost"}`}
+                        onClick={() => toggleDraftArray("allowedGroups", group.id)}
+                        aria-pressed={selected}
+                        title={group.label}
+                      >
+                        {group.label}
+                      </button>
+                    );
+                  })}
+                  {!groupOptions.length && <span className="access-table__meta">No groups loaded</span>}
+                </div>
+              </div>
+
+              <div className="access-modal__toggles">
+                <label className="access-toggle">
+                  <input
+                    type="checkbox"
+                    checked={draft.showInSidebar}
+                    onChange={(event) => setDraft({ ...draft, showInSidebar: event.target.checked })}
+                  />
+                  <span>Show in sidebar</span>
+                </label>
+                <label className="access-toggle">
+                  <input
+                    type="checkbox"
+                    checked={draft.showInTopbar}
+                    onChange={(event) => setDraft({ ...draft, showInTopbar: event.target.checked })}
+                  />
+                  <span>Show in topbar</span>
+                </label>
+              </div>
+            </div>
+
+            <footer className="access-modal__footer">
+              <button type="button" className="btn secondary" onClick={closeEdit} disabled={isSaving}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleSave}
+                disabled={!hasChanges || isSaving}
+              >
+                {isSaving ? "Saving..." : "Save changes"}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </ContentShell>
   );
 }
