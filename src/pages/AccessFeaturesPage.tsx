@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import useAccessControl, { type AccessGroupRecord, type FeatureAccessRecord } from "../hooks/useAccessControl";
-import { updateFeatureAccess } from "../lib/adminAccessControlApi";
+import { updateAccessGroup, updateFeatureAccess } from "../lib/adminAccessControlApi";
 import type { AccessRole, FeatureAccessStatus } from "../types/accessControl";
 
 type FeatureStatusFilter = FeatureAccessStatus | "all";
@@ -81,15 +81,28 @@ function formatTimestamp(date?: Date | null) {
   });
 }
 
+function arraysEqual(a?: string[], b?: string[]) {
+  const one = a ?? [];
+  const two = b ?? [];
+  if (one.length !== two.length) return false;
+  return one.every((value) => two.includes(value));
+}
+
 export default function AccessFeaturesPage() {
   const { features, accessGroups, isLoading, error, refresh } = useAccessControl();
   const [featureSearch, setFeatureSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FeatureStatusFilter>("all");
   const [groupSearch, setGroupSearch] = useState("");
+
   const [editingFeature, setEditingFeature] = useState<FeatureAccessRecord | null>(null);
-  const [draft, setDraft] = useState<FeatureAccessRecord | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [featureDraft, setFeatureDraft] = useState<FeatureAccessRecord | null>(null);
+  const [featureSaveError, setFeatureSaveError] = useState<string | null>(null);
+  const [isFeatureSaving, setIsFeatureSaving] = useState(false);
+
+  const [editingGroup, setEditingGroup] = useState<AccessGroupRecord | null>(null);
+  const [groupDraft, setGroupDraft] = useState<AccessGroupRecord | null>(null);
+  const [groupSaveError, setGroupSaveError] = useState<string | null>(null);
+  const [isGroupSaving, setIsGroupSaving] = useState(false);
 
   const filteredFeatures = useMemo(() => {
     const query = normalizeSearch(featureSearch);
@@ -111,69 +124,115 @@ export default function AccessFeaturesPage() {
     [accessGroups],
   );
 
-  const startEdit = (feature: FeatureAccessRecord) => {
+  const startFeatureEdit = (feature: FeatureAccessRecord) => {
     setEditingFeature(feature);
-    setDraft({ ...feature });
-    setSaveError(null);
+    setFeatureDraft({ ...feature });
+    setFeatureSaveError(null);
   };
 
-  const closeEdit = () => {
+  const closeFeatureEdit = () => {
     setEditingFeature(null);
-    setDraft(null);
-    setSaveError(null);
+    setFeatureDraft(null);
+    setFeatureSaveError(null);
   };
 
-  const toggleDraftArray = (key: "allowedRoles" | "allowedGroups", value: string) => {
-    if (!draft) return;
-    const current = draft[key] ?? [];
+  const toggleFeatureArray = (key: "allowedRoles" | "allowedGroups", value: string) => {
+    if (!featureDraft) return;
+    const current = featureDraft[key] ?? [];
     const nextSet = new Set(current);
     if (nextSet.has(value)) {
       nextSet.delete(value);
     } else {
       nextSet.add(value);
     }
-    setDraft({ ...draft, [key]: Array.from(nextSet) });
+    setFeatureDraft({ ...featureDraft, [key]: Array.from(nextSet) });
   };
 
-  const hasChanges = useMemo(() => {
-    if (!draft || !editingFeature) return false;
-
-    const arraysEqual = (a?: string[], b?: string[]) => {
-      const one = a ?? [];
-      const two = b ?? [];
-      if (one.length !== two.length) return false;
-      return one.every((value) => two.includes(value));
-    };
-
+  const featureHasChanges = useMemo(() => {
+    if (!featureDraft || !editingFeature) return false;
     return (
-      draft.status !== editingFeature.status ||
-      draft.minRole !== editingFeature.minRole ||
-      draft.showInSidebar !== editingFeature.showInSidebar ||
-      draft.showInTopbar !== editingFeature.showInTopbar ||
-      !arraysEqual(draft.allowedRoles as string[] | undefined, editingFeature.allowedRoles as string[] | undefined) ||
-      !arraysEqual(draft.allowedGroups, editingFeature.allowedGroups)
+      featureDraft.status !== editingFeature.status ||
+      featureDraft.minRole !== editingFeature.minRole ||
+      featureDraft.showInSidebar !== editingFeature.showInSidebar ||
+      featureDraft.showInTopbar !== editingFeature.showInTopbar ||
+      !arraysEqual(featureDraft.allowedRoles as string[] | undefined, editingFeature.allowedRoles as string[] | undefined) ||
+      !arraysEqual(featureDraft.allowedGroups, editingFeature.allowedGroups)
     );
-  }, [draft, editingFeature]);
+  }, [editingFeature, featureDraft]);
 
-  const handleSave = async () => {
-    if (!draft || !editingFeature) return;
-    setIsSaving(true);
-    setSaveError(null);
+  const handleFeatureSave = async () => {
+    if (!featureDraft || !editingFeature) return;
+    setIsFeatureSaving(true);
+    setFeatureSaveError(null);
     try {
       await updateFeatureAccess(editingFeature.id, {
-        status: draft.status,
-        minRole: draft.minRole,
-        allowedRoles: draft.allowedRoles,
-        allowedGroups: draft.allowedGroups,
-        showInSidebar: draft.showInSidebar,
-        showInTopbar: draft.showInTopbar,
+        status: featureDraft.status,
+        minRole: featureDraft.minRole,
+        allowedRoles: featureDraft.allowedRoles,
+        allowedGroups: featureDraft.allowedGroups,
+        showInSidebar: featureDraft.showInSidebar,
+        showInTopbar: featureDraft.showInTopbar,
       });
-      closeEdit();
+      closeFeatureEdit();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save feature.";
-      setSaveError(message);
+      setFeatureSaveError(message);
     } finally {
-      setIsSaving(false);
+      setIsFeatureSaving(false);
+    }
+  };
+
+  const startGroupEdit = (group: AccessGroupRecord) => {
+    setEditingGroup(group);
+    setGroupDraft({ ...group });
+    setGroupSaveError(null);
+  };
+
+  const closeGroupEdit = () => {
+    setEditingGroup(null);
+    setGroupDraft(null);
+    setGroupSaveError(null);
+  };
+
+  const toggleGroupRole = (role: AccessRole) => {
+    if (!groupDraft) return;
+    const current = groupDraft.allowedRoles ?? [];
+    const nextSet = new Set(current);
+    if (nextSet.has(role)) {
+      nextSet.delete(role);
+    } else {
+      nextSet.add(role);
+    }
+    setGroupDraft({ ...groupDraft, allowedRoles: Array.from(nextSet) });
+  };
+
+  const groupHasChanges = useMemo(() => {
+    if (!groupDraft || !editingGroup) return false;
+    return (
+      (groupDraft.label ?? "") !== (editingGroup.label ?? "") ||
+      (groupDraft.description ?? "") !== (editingGroup.description ?? "") ||
+      groupDraft.minRole !== editingGroup.minRole ||
+      !arraysEqual(groupDraft.allowedRoles as string[] | undefined, editingGroup.allowedRoles as string[] | undefined)
+    );
+  }, [editingGroup, groupDraft]);
+
+  const handleGroupSave = async () => {
+    if (!groupDraft || !editingGroup) return;
+    setIsGroupSaving(true);
+    setGroupSaveError(null);
+    try {
+      await updateAccessGroup(editingGroup.id, {
+        label: groupDraft.label,
+        description: groupDraft.description,
+        minRole: groupDraft.minRole,
+        allowedRoles: groupDraft.allowedRoles,
+      });
+      closeGroupEdit();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save group.";
+      setGroupSaveError(message);
+    } finally {
+      setIsGroupSaving(false);
     }
   };
 
@@ -312,7 +371,7 @@ export default function AccessFeaturesPage() {
                         <button
                           type="button"
                           className="text-link"
-                          onClick={() => startEdit(feature)}
+                          onClick={() => startFeatureEdit(feature)}
                         >
                           Edit
                         </button>
@@ -362,6 +421,7 @@ export default function AccessFeaturesPage() {
                   <th>Allowed roles</th>
                   <th>User count</th>
                   <th>Flags</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -395,6 +455,17 @@ export default function AccessFeaturesPage() {
                         </span>
                       </div>
                     </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="text-link"
+                        onClick={() => startGroupEdit(group)}
+                        disabled={group.isSystem === true}
+                        title={group.isSystem ? "System groups are managed elsewhere" : "Edit group"}
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -408,7 +479,7 @@ export default function AccessFeaturesPage() {
         </section>
       </div>
 
-      {draft && editingFeature && (
+      {featureDraft && editingFeature && (
         <div className="log-modal" role="dialog" aria-modal="true" aria-label="Edit feature access">
           <div className="log-modal__content access-modal">
             <header className="log-modal__header">
@@ -417,20 +488,20 @@ export default function AccessFeaturesPage() {
                 <h2 className="access-modal__title">{editingFeature.titleKey}</h2>
                 <p className="access-table__meta">{editingFeature.route}</p>
               </div>
-              <button type="button" className="text-link" onClick={closeEdit} disabled={isSaving}>
+              <button type="button" className="text-link" onClick={closeFeatureEdit} disabled={isFeatureSaving}>
                 Close
               </button>
             </header>
 
-            {saveError && <div className="error-banner">Failed to save: {saveError}</div>}
+            {featureSaveError && <div className="error-banner">Failed to save: {featureSaveError}</div>}
 
             <div className="access-modal__form">
               <label className="filter-control">
                 <span>Status</span>
                 <select
-                  value={draft.status}
+                  value={featureDraft.status}
                   onChange={(event) =>
-                    setDraft({ ...draft, status: event.target.value as FeatureAccessStatus })
+                    setFeatureDraft({ ...featureDraft, status: event.target.value as FeatureAccessStatus })
                   }
                 >
                   {statusOptions
@@ -446,8 +517,10 @@ export default function AccessFeaturesPage() {
               <label className="filter-control">
                 <span>Min role</span>
                 <select
-                  value={draft.minRole}
-                  onChange={(event) => setDraft({ ...draft, minRole: event.target.value as AccessRole })}
+                  value={featureDraft.minRole}
+                  onChange={(event) =>
+                    setFeatureDraft({ ...featureDraft, minRole: event.target.value as AccessRole })
+                  }
                 >
                   {editableRoles.map((role) => (
                     <option key={role} value={role}>
@@ -461,13 +534,13 @@ export default function AccessFeaturesPage() {
                 <span>Allowed roles</span>
                 <div className="access-modal__chips">
                   {editableRoles.map((role) => {
-                    const selected = draft.allowedRoles?.includes(role) ?? false;
+                    const selected = featureDraft.allowedRoles?.includes(role) ?? false;
                     return (
                       <button
                         type="button"
                         key={role}
                         className={`pill role-pill role-pill--${role} ${selected ? "" : "pill--ghost"}`}
-                        onClick={() => toggleDraftArray("allowedRoles", role)}
+                        onClick={() => toggleFeatureArray("allowedRoles", role)}
                         aria-pressed={selected}
                       >
                         {formatRole(role)}
@@ -481,13 +554,13 @@ export default function AccessFeaturesPage() {
                 <span>Allowed groups</span>
                 <div className="access-modal__chips">
                   {groupOptions.map((group) => {
-                    const selected = draft.allowedGroups?.includes(group.id) ?? false;
+                    const selected = featureDraft.allowedGroups?.includes(group.id) ?? false;
                     return (
                       <button
                         type="button"
                         key={group.id}
                         className={`pill access-pill ${selected ? "" : "pill--ghost"}`}
-                        onClick={() => toggleDraftArray("allowedGroups", group.id)}
+                        onClick={() => toggleFeatureArray("allowedGroups", group.id)}
                         aria-pressed={selected}
                         title={group.label}
                       >
@@ -503,16 +576,20 @@ export default function AccessFeaturesPage() {
                 <label className="access-toggle">
                   <input
                     type="checkbox"
-                    checked={draft.showInSidebar}
-                    onChange={(event) => setDraft({ ...draft, showInSidebar: event.target.checked })}
+                    checked={featureDraft.showInSidebar}
+                    onChange={(event) =>
+                      setFeatureDraft({ ...featureDraft, showInSidebar: event.target.checked })
+                    }
                   />
                   <span>Show in sidebar</span>
                 </label>
                 <label className="access-toggle">
                   <input
                     type="checkbox"
-                    checked={draft.showInTopbar}
-                    onChange={(event) => setDraft({ ...draft, showInTopbar: event.target.checked })}
+                    checked={featureDraft.showInTopbar}
+                    onChange={(event) =>
+                      setFeatureDraft({ ...featureDraft, showInTopbar: event.target.checked })
+                    }
                   />
                   <span>Show in topbar</span>
                 </label>
@@ -520,16 +597,128 @@ export default function AccessFeaturesPage() {
             </div>
 
             <footer className="access-modal__footer">
-              <button type="button" className="btn secondary" onClick={closeEdit} disabled={isSaving}>
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={closeFeatureEdit}
+                disabled={isFeatureSaving}
+              >
                 Cancel
               </button>
               <button
                 type="button"
                 className="btn"
-                onClick={handleSave}
-                disabled={!hasChanges || isSaving}
+                onClick={handleFeatureSave}
+                disabled={!featureHasChanges || isFeatureSaving}
               >
-                {isSaving ? "Saving..." : "Save changes"}
+                {isFeatureSaving ? "Saving..." : "Save changes"}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {groupDraft && editingGroup && (
+        <div className="log-modal" role="dialog" aria-modal="true" aria-label="Edit access group">
+          <div className="log-modal__content access-modal">
+            <header className="log-modal__header">
+              <div>
+                <p className="log-modal__eyebrow">Edit group</p>
+                <h2 className="access-modal__title">{editingGroup.label}</h2>
+                <p className="access-table__meta">{editingGroup.id}</p>
+              </div>
+              <button type="button" className="text-link" onClick={closeGroupEdit} disabled={isGroupSaving}>
+                Close
+              </button>
+            </header>
+
+            {groupSaveError && <div className="error-banner">Failed to save: {groupSaveError}</div>}
+
+            <div className="access-modal__form">
+              <label className="filter-control filter-control--grow">
+                <span>Label</span>
+                <input
+                  value={groupDraft.label ?? ""}
+                  onChange={(event) => setGroupDraft({ ...groupDraft, label: event.target.value })}
+                  placeholder="Group label"
+                />
+              </label>
+
+              <label className="filter-control filter-control--grow">
+                <span>Description</span>
+                <textarea
+                  value={groupDraft.description ?? ""}
+                  onChange={(event) => setGroupDraft({ ...groupDraft, description: event.target.value })}
+                  placeholder="Short description"
+                  rows={3}
+                  style={{ resize: "vertical" }}
+                />
+              </label>
+
+              <label className="filter-control">
+                <span>Min role</span>
+                <select
+                  value={groupDraft.minRole ?? "user"}
+                  onChange={(event) =>
+                    setGroupDraft({ ...groupDraft, minRole: event.target.value as AccessRole })
+                  }
+                >
+                  {editableRoles.map((role) => (
+                    <option key={role} value={role}>
+                      {formatRole(role)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="filter-control">
+                <span>Allowed roles</span>
+                <div className="access-modal__chips">
+                  {editableRoles.map((role) => {
+                    const selected = groupDraft.allowedRoles?.includes(role) ?? false;
+                    return (
+                      <button
+                        type="button"
+                        key={role}
+                        className={`pill role-pill role-pill--${role} ${selected ? "" : "pill--ghost"}`}
+                        onClick={() => toggleGroupRole(role)}
+                        aria-pressed={selected}
+                      >
+                        {formatRole(role)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="filter-control">
+                <span>Flags</span>
+                <div className="access-table__flags">
+                  <span
+                    className={`visibility-flag ${groupDraft.isSystem ? "visibility-flag--on" : "visibility-flag--off"}`}
+                  >
+                    {groupDraft.isSystem ? "System group" : "Custom group"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <footer className="access-modal__footer">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={closeGroupEdit}
+                disabled={isGroupSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleGroupSave}
+                disabled={!groupHasChanges || isGroupSaving}
+              >
+                {isGroupSaving ? "Saving..." : "Save changes"}
               </button>
             </footer>
           </div>
