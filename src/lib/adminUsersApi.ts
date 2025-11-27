@@ -9,6 +9,8 @@ import type {
 const BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL ?? "").replace(/\/+$/, "");
 const ADMIN_USERS_PATH = "/admin/users";
 const ROLE_PRIORITY: AdminRole[] = ["user", "moderator", "developer", "admin"];
+const BACKEND_ROLE_PRIORITY = ["user", "mod", "creator", "admin"] as const;
+type BackendAdminRole = (typeof BACKEND_ROLE_PRIORITY)[number];
 
 const ROLE_ALIASES: Record<string, AdminRole> = {
   admin: "admin",
@@ -19,6 +21,22 @@ const ROLE_ALIASES: Record<string, AdminRole> = {
   dev: "developer",
   creator: "developer",
   user: "user",
+};
+
+const toBackendRole = (role: AdminRole): BackendAdminRole => {
+  switch (role) {
+    case "admin":
+    case "owner":
+      return "admin";
+    case "moderator":
+    case "mod":
+      return "mod";
+    case "developer":
+    case "creator":
+      return "creator";
+    default:
+      return "user";
+  }
 };
 
 const STATUS_VALUES: AdminStatus[] = ["active", "suspended", "banned"];
@@ -162,12 +180,19 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
   return incoming.map(normalizeAdminUser);
 }
 
-export async function updateUserRoles(userId: string, roles: string[]): Promise<AdminUser> {
+export async function updateUserRoles(userId: string, roles: AdminRole[]): Promise<AdminUser> {
   if (!BASE_URL) {
     throw new Error("Auth API base URL is missing (VITE_AUTH_BASE_URL).");
   }
   if (!userId) {
     throw new Error("User id is required to update roles.");
+  }
+
+  const payloadRoles = Array.from(
+    new Set(roles.map(toBackendRole).filter((role): role is BackendAdminRole => Boolean(role))),
+  );
+  if (!payloadRoles.length) {
+    payloadRoles.push("user");
   }
 
   const url = `${BASE_URL}${ADMIN_USERS_PATH}/${encodeURIComponent(userId)}/roles`;
@@ -177,7 +202,7 @@ export async function updateUserRoles(userId: string, roles: string[]): Promise<
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ roles }),
+    body: JSON.stringify({ roles: payloadRoles }),
   });
 
   const data = await handleResponse(response);
