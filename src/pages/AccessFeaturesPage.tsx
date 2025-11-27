@@ -244,15 +244,15 @@ export default function AccessFeaturesPage() {
         <PageHeader
           title="Access & Features"
           subtitle="View which features and pages are visible for which roles and access groups."
-          hintRight="Data from Firestore (read-only)"
+          hintRight="Data loaded via auth-api (read/write via backend)"
         />
       }
     >
       <div className="admin-top">
         <p className="admin-top__hint">
           {error
-            ? "Could not load access data from Firestore."
-            : "Live snapshot from feature_access and access_groups (read-only)."}
+            ? "Could not load access data from auth-api."
+            : "Live snapshot from feature_access and access_groups (read via auth-api, write via backend)."}
         </p>
         {error && <p className="admin-top__hint">Debug: {error}</p>}
         <div className="admin-top__actions">

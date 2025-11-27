@@ -76,3 +76,23 @@ export async function updateAccessGroup(groupId: string, payload: UpdateAccessGr
 
   return handleResponse(response);
 }
+
+export async function fetchAccessConfig() {
+  if (!BASE_URL) {
+    throw new Error("AUTH base URL missing (VITE_AUTH_BASE_URL).");
+  }
+
+  const url = `${BASE_URL}/admin/access-control`;
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return handleResponse(response) as Promise<{
+    features?: Array<Record<string, unknown>>;
+    groups?: Array<Record<string, unknown>>;
+  }>;
+}

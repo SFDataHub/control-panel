@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import useAuth from "./useAuth";
+import { fetchAccessConfig } from "../lib/adminAccessControlApi";
 import type {
   AccessGroup,
   AccessRole,
@@ -32,8 +31,9 @@ export interface UseAccessControlResult {
 const KNOWN_STATUSES: FeatureAccessStatus[] = ["public", "logged_in", "beta", "dev_only", "hidden"];
 
 function normalizeTimestamp(value: TimestampValue): Date | null {
-  if (value instanceof Timestamp) {
-    return value.toDate();
+  if (value && typeof (value as any).toDate === "function") {
+    const date = (value as any).toDate();
+    return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
   }
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value;
@@ -143,30 +143,39 @@ export default function useAccessControl(): UseAccessControlResult {
     setIsLoading(true);
     setError(null);
     try {
-      const [featureSnap, accessGroupsSnap] = await Promise.all([
-        getDocs(collection(db, "feature_access")),
-        getDocs(collection(db, "access_groups")),
-      ]);
+      const payload = await fetchAccessConfig();
 
       if (cancelToken?.cancelled) return;
 
-      const normalizedFeatures = featureSnap.docs
-        .map((doc) => normalizeFeatureAccess(doc.id, doc.data() as Record<string, unknown>))
-        .sort((a, b) => {
-          const orderA = a.navOrder ?? Number.MAX_SAFE_INTEGER;
-          const orderB = b.navOrder ?? Number.MAX_SAFE_INTEGER;
-          if (orderA !== orderB) return orderA - orderB;
-          return a.route.localeCompare(b.route);
-        });
+      const normalizedFeatures = (payload.features ?? [])
+        .map((entry) => {
+          const id = typeof entry.id === "string" ? entry.id : "";
+          if (!id) return null;
+          return normalizeFeatureAccess(id, entry as Record<string, unknown>);
+        })
+        .filter(Boolean) as FeatureAccessRecord[];
 
-      const normalizedGroups = accessGroupsSnap.docs
-        .map((doc) => normalizeAccessGroup(doc.id, doc.data() as Record<string, unknown>))
-        .sort((a, b) => a.id.localeCompare(b.id));
+      const normalizedGroups = (payload.groups ?? [])
+        .map((entry) => {
+          const id = typeof entry.id === "string" ? entry.id : "";
+          if (!id) return null;
+          return normalizeAccessGroup(id, entry as Record<string, unknown>);
+        })
+        .filter(Boolean) as AccessGroupRecord[];
+
+      normalizedFeatures.sort((a, b) => {
+        const orderA = a.navOrder ?? Number.MAX_SAFE_INTEGER;
+        const orderB = b.navOrder ?? Number.MAX_SAFE_INTEGER;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.route.localeCompare(b.route);
+      });
+
+      normalizedGroups.sort((a, b) => a.id.localeCompare(b.id));
 
       setFeatures(normalizedFeatures);
       setAccessGroups(normalizedGroups);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load access control collections.";
+      const message = err instanceof Error ? err.message : "Failed to load access data from auth-api.";
       console.error("[AccessControl] Failed to load access data:", err);
       if (!cancelToken?.cancelled) {
         setError(message);
