@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { collection, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import useAuth from "./useAuth";
 import type {
   AccessGroup,
   AccessRole,
@@ -136,6 +137,7 @@ export default function useAccessControl(): UseAccessControlResult {
   const [accessGroups, setAccessGroups] = useState<AccessGroupRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
 
   const fetchData = useCallback(async (cancelToken?: { cancelled: boolean }) => {
     setIsLoading(true);
@@ -180,15 +182,39 @@ export default function useAccessControl(): UseAccessControlResult {
 
   useEffect(() => {
     const cancelToken = { cancelled: false };
+    if (authLoading) {
+      setError(null);
+      return () => {
+        cancelToken.cancelled = true;
+      };
+    }
+
+    if (!user) {
+      setFeatures([]);
+      setAccessGroups([]);
+      setIsLoading(false);
+      setError(null);
+      return () => {
+        cancelToken.cancelled = true;
+      };
+    }
+
     void fetchData(cancelToken);
     return () => {
       cancelToken.cancelled = true;
     };
-  }, [fetchData]);
+  }, [authLoading, user, fetchData]);
 
   const refresh = useCallback(() => {
+    if (authLoading || !user) {
+      setFeatures([]);
+      setAccessGroups([]);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
     void fetchData();
-  }, [fetchData]);
+  }, [authLoading, user, fetchData]);
 
   return {
     features,
