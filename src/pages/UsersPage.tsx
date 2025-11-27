@@ -1,18 +1,30 @@
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import { adminUsersSummary } from "../config/adminUsers";
 import type { AdminRole, AdminStatus, AdminUser, AuthProvider } from "../config/adminUsers";
 import { useAdminUsers } from "../hooks/useAdminUsers";
+import useAuth from "../hooks/useAuth";
+import { roleOrder, updateUserRoles } from "../lib/adminUsersApi";
 
 type RoleFilter = AdminRole | "all";
 type StatusFilter = AdminStatus | "all";
+type RoleMenuState = { user: AdminUser; x: number; y: number; roles: AdminRole[] };
+
+const editableRoles: AdminRole[] = roleOrder;
 
 const roleOptions: { label: string; value: RoleFilter }[] = [
   { label: "All roles", value: "all" },
   { label: "Admin", value: "admin" },
-  { label: "Moderator", value: "mod" },
-  { label: "Creator", value: "creator" },
+  { label: "Moderator", value: "moderator" },
+  { label: "Developer", value: "developer" },
   { label: "User", value: "user" },
 ];
 
@@ -28,11 +40,14 @@ const providerLabels: Record<AuthProvider, string> = {
   google: "Google",
 };
 
-const roleLabels: Record<AdminRole, string> = {
+const roleLabels: Record<string, string> = {
   admin: "Admin",
+  moderator: "Moderator",
   mod: "Moderator",
-  creator: "Creator",
+  creator: "Developer",
+  developer: "Developer",
   user: "User",
+  owner: "Owner",
 };
 
 const statusLabels: Record<AdminStatus, string> = {
@@ -40,6 +55,20 @@ const statusLabels: Record<AdminStatus, string> = {
   suspended: "Suspended",
   banned: "Banned",
 };
+
+const sortRoles = (roles: AdminRole[]): AdminRole[] => {
+  const orderIndex = (role: AdminRole) => {
+    const idx = roleOrder.indexOf(role);
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+  };
+  return [...roles].sort((a, b) => orderIndex(a) - orderIndex(b));
+};
+
+const isSystemUser = (user: AdminUser) =>
+  user.isSystem === true || (user.flags ?? []).includes("system");
+
+const isSameUser = (left: AdminUser, right: AdminUser) =>
+  left.userId === right.userId || left.id === right.id;
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
@@ -85,7 +114,18 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const { users, isLoading, error, refresh } = useAdminUsers();
+  const [roleMenu, setRoleMenu] = useState<RoleMenuState | null>(null);
+  const [roleMenuError, setRoleMenuError] = useState<string | null>(null);
+  const [isRoleSaving, setIsRoleSaving] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement | null>(null);
+  const { users, isLoading, error, refresh, replaceUser } = useAdminUsers();
+  const { user: authUser } = useAuth();
+
+  const viewerRoles = useMemo(
+    () => (authUser?.roles ?? []).map((role) => role.toLowerCase()),
+    [authUser],
+  );
+  const canManageRoles = viewerRoles.some((role) => role === "admin" || role === "owner");
 
   const filteredUsers = useMemo(() => {
     const query = normalizeSearch(searchTerm);
@@ -104,23 +144,125 @@ export default function UsersPage() {
     });
   }, [roleFilter, statusFilter, searchTerm, users]);
 
+  const roleMenuPosition = useMemo(() => {
+    if (!roleMenu) return undefined;
+    const maxLeft = typeof window !== "undefined" ? Math.max(12, window.innerWidth - 260) : null;
+    const maxTop = typeof window !== "undefined" ? Math.max(12, window.innerHeight - 220) : null;
+    return {
+      left: maxLeft ? Math.min(roleMenu.x, maxLeft) : roleMenu.x,
+      top: maxTop ? Math.min(roleMenu.y, maxTop) : roleMenu.y,
+    };
+  }, [roleMenu]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+    const latest = users.find((user) => isSameUser(user, selectedUser));
+    if (latest && latest !== selectedUser) {
+      setSelectedUser(latest);
+    }
+  }, [selectedUser, users]);
+
+  const closeRoleMenu = useCallback(() => {
+    setRoleMenu(null);
+    setRoleMenuError(null);
+    setIsRoleSaving(false);
+  }, []);
+
+  const openRoleMenu = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>, user: AdminUser) => {
+      if (!canManageRoles || isSystemUser(user)) return;
+      if (typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches) {
+        return;
+      }
+      event.preventDefault();
+      setRoleMenu({
+        user,
+        x: event.clientX,
+        y: event.clientY,
+        roles: sortRoles(user.roles),
+      });
+      setRoleMenuError(null);
+      setIsRoleSaving(false);
+    },
+    [canManageRoles],
+  );
+
+  useEffect(() => {
+    if (!roleMenu) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeRoleMenu();
+      }
+    };
+    const handleClick = (event: MouseEvent) => {
+      if (!roleMenuRef.current) return;
+      if (!roleMenuRef.current.contains(event.target as Node)) {
+        closeRoleMenu();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("mousedown", handleClick);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("mousedown", handleClick);
+    };
+  }, [closeRoleMenu, roleMenu]);
+
+  const handleRoleToggle = useCallback(
+    async (role: AdminRole) => {
+      if (!roleMenu || isRoleSaving) return;
+
+      const previousRoles = roleMenu.roles;
+      const nextSet = new Set(previousRoles);
+      if (nextSet.has(role)) {
+        nextSet.delete(role);
+      } else {
+        nextSet.add(role);
+      }
+      const nextRoles = sortRoles(Array.from(nextSet));
+
+      setRoleMenu({ ...roleMenu, roles: nextRoles });
+      setIsRoleSaving(true);
+      setRoleMenuError(null);
+      try {
+        const updatedUser = await updateUserRoles(
+          roleMenu.user.userId || roleMenu.user.id,
+          nextRoles,
+        );
+        replaceUser(updatedUser);
+        setSelectedUser((current) =>
+          current && isSameUser(current, updatedUser) ? updatedUser : current,
+        );
+        setRoleMenu((current) =>
+          current ? { ...current, user: updatedUser, roles: sortRoles(updatedUser.roles) } : current,
+        );
+      } catch (err) {
+        setRoleMenuError(err instanceof Error ? err.message : "Failed to update roles.");
+        setRoleMenu((current) => (current ? { ...current, roles: previousRoles } : current));
+      } finally {
+        setIsRoleSaving(false);
+      }
+    },
+    [isRoleSaving, replaceUser, roleMenu],
+  );
+
   const summary = useMemo(() => adminUsersSummary(filteredUsers), [filteredUsers]);
 
   return (
     <ContentShell
       title="Admin Users"
-      description="Read-only view of admin users from Firestore via auth-api"
+      description="View and edit admin users from auth-api (right-click a user to toggle roles)."
       headerContent={
         <PageHeader
           title="Admin Users"
-          subtitle="Manage access to SFDataHub admin tools (read-only)"
-          hintRight="Data loaded from auth-api /admin/users"
+          subtitle="Manage access to SFDataHub admin tools via auth-api."
+          hintRight="GET /admin/users · PATCH /admin/users/:userId/roles"
         />
       }
     >
       <div className="admin-top">
         <p className="admin-top__hint">
-          {error ? "Couldn't load admin users." : "Connected to auth-api (read-only)."}
+          {error ? `Couldn't load admin users. ${error}` : "Connected to auth-api (roles editable)."}
         </p>
         <div className="admin-top__actions">
           {isLoading && <span className="admin-top__status">Loading...</span>}
@@ -187,6 +329,7 @@ export default function UsersPage() {
             key={user.id}
             className="user-row"
             onClick={() => setSelectedUser(user)}
+            onContextMenu={(event) => openRoleMenu(event, user)}
           >
             <div className="user-cell user-cell--name">
               <p className="user-name">{getDisplayName(user)}</p>
@@ -202,7 +345,7 @@ export default function UsersPage() {
             <div className="user-cell user-cell--roles">
               {user.roles.map((role) => (
                 <span key={role} className={`pill role-pill role-pill--${role}`}>
-                  {roleLabels[role]}
+                  {roleLabels[role] ?? role}
                 </span>
               ))}
             </div>
@@ -229,6 +372,54 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {roleMenu && (
+        <div className="role-menu-overlay" onClick={closeRoleMenu}>
+          <div
+            ref={roleMenuRef}
+            className="role-menu"
+            style={roleMenuPosition}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="role-menu__header">
+              <p className="role-menu__eyebrow">Roles</p>
+              <h3 className="role-menu__title">{getDisplayName(roleMenu.user)}</h3>
+              <p className="role-menu__id">{roleMenu.user.userId}</p>
+            </div>
+            {roleMenuError && <p className="role-menu__error">{roleMenuError}</p>}
+            <div className="role-menu__roles">
+              {editableRoles.map((role) => {
+                const active = roleMenu.roles.includes(role);
+                return (
+                  <button
+                    type="button"
+                    key={role}
+                    className={`pill role-pill role-pill--${role} ${active ? "" : "pill--ghost"}`}
+                    onClick={() => handleRoleToggle(role)}
+                    disabled={isRoleSaving}
+                    aria-pressed={active}
+                  >
+                    {roleLabels[role] ?? role}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="role-menu__footer">
+              <span className="role-menu__status">
+                {isRoleSaving ? "Saving..." : "Right-click a user to manage roles"}
+              </span>
+              <button
+                type="button"
+                className="text-link"
+                onClick={closeRoleMenu}
+                disabled={isRoleSaving}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedUser && (
         <aside className="user-detail-drawer">
@@ -263,7 +454,7 @@ export default function UsersPage() {
               <div className="user-detail-drawer__badges">
                 {selectedUser.roles.map((role) => (
                   <span key={role} className={`pill role-pill role-pill--${role}`}>
-                    {roleLabels[role]}
+                    {roleLabels[role] ?? role}
                   </span>
                 ))}
               </div>

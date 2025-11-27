@@ -1114,6 +1114,84 @@ button.text-link {
   gap: 0.75rem;
 }
 
+.role-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.role-menu {
+  position: absolute;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 0.9rem;
+  border-radius: 0.95rem;
+  background: #0f1624;
+  border: 1px solid #1f3150;
+  box-shadow: 0 22px 45px rgba(5, 10, 24, 0.65);
+  color: #edf2ff;
+}
+
+.role-menu__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.role-menu__eyebrow {
+  margin: 0;
+  color: #7cb3ff;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.role-menu__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.role-menu__id {
+  margin: 0;
+  color: #9fb0d4;
+  font-size: 0.8rem;
+}
+
+.role-menu__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.role-menu__error {
+  margin: 0.25rem 0;
+  color: #ffb4ad;
+  font-size: 0.85rem;
+}
+
+.role-menu__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.role-menu__status {
+  font-size: 0.8rem;
+  color: #9fb0d4;
+}
+
+.role-menu button.pill {
+  cursor: pointer;
+}
+
+.role-menu button[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .user-row {
   display: grid;
   grid-template-columns: minmax(200px, 1.2fr) minmax(160px, 0.9fr) minmax(200px, 1fr) minmax(120px, 0.8fr) minmax(170px, 1fr) minmax(170px, 1fr);

@@ -1,5 +1,7 @@
+import type { AccessRole } from "../types/accessControl";
+
 export type AuthProvider = "discord" | "google";
-export type AdminRole = "admin" | "mod" | "creator" | "user";
+export type AdminRole = AccessRole | "mod" | "creator" | "owner";
 export type AdminStatus = "active" | "suspended" | "banned";
 
 export type ProviderDocEntry = {
@@ -25,6 +27,8 @@ export interface AdminUser {
   createdAt: string | null;
   lastLoginAt: string | null;
   notes: string | null;
+  flags?: string[];
+  isSystem?: boolean;
 }
 
 export type AdminUsersSummary = {
@@ -58,7 +62,7 @@ export const mockAdminUsers: AdminUser[] = [
     avatarUrl: null,
     primaryProvider: "discord",
     providers: { discord: { id: "2201", displayName: "Astra Vigil" } },
-    roles: ["mod"],
+    roles: ["moderator"],
     status: "active",
     createdAt: "2025-06-02T12:03:00.000Z",
     lastLoginAt: "2025-11-22T18:30:00.000Z",
@@ -71,7 +75,7 @@ export const mockAdminUsers: AdminUser[] = [
     avatarUrl: null,
     primaryProvider: "google",
     providers: { google: { id: "3302", displayName: "Lukas Stark" } },
-    roles: ["creator"],
+    roles: ["developer"],
     status: "active",
     createdAt: "2025-07-14T15:21:00.000Z",
     lastLoginAt: "2025-11-21T20:14:00.000Z",
@@ -97,7 +101,7 @@ export const mockAdminUsers: AdminUser[] = [
     avatarUrl: null,
     primaryProvider: "google",
     providers: { google: { id: "5504", displayName: "Juno Kei" } },
-    roles: ["mod"],
+    roles: ["moderator"],
     status: "banned",
     createdAt: "2025-09-05T17:42:00.000Z",
     lastLoginAt: "2025-11-05T14:10:00.000Z",
@@ -124,7 +128,7 @@ export function adminUsersSummary(users: AdminUser[]): AdminUsersSummary {
       if (user.roles.includes("admin")) {
         acc.admins += 1;
       }
-      if (user.roles.includes("mod")) {
+      if (user.roles.includes("moderator")) {
         acc.moderators += 1;
       }
       if (user.status === "suspended" || user.status === "banned") {
