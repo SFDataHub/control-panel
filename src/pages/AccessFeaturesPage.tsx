@@ -49,6 +49,12 @@ function matchesGroup(row: AccessGroupRecord, query: string) {
   return `${row.id} ${row.label ?? ""}`.toLowerCase().includes(query);
 }
 
+type VisibilityField = "showInSidebar" | "showInTopbar";
+
+function getVisibilityToggleKey(featureId: string, field: VisibilityField) {
+  return `${featureId}:${field}`;
+}
+
 function formatRole(role: AccessRole | undefined) {
   if (!role) return "—";
   return roleLabels[role] ?? role;
@@ -89,7 +95,7 @@ function arraysEqual(a?: string[], b?: string[]) {
 }
 
 export default function AccessFeaturesPage() {
-  const { features, accessGroups, isLoading, error, refresh } = useAccessControl();
+  const { features, accessGroups, isLoading, error, refresh, updateFeature } = useAccessControl();
   const [featureSearch, setFeatureSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FeatureStatusFilter>("all");
   const [groupSearch, setGroupSearch] = useState("");
@@ -98,6 +104,8 @@ export default function AccessFeaturesPage() {
   const [featureDraft, setFeatureDraft] = useState<FeatureAccessRecord | null>(null);
   const [featureSaveError, setFeatureSaveError] = useState<string | null>(null);
   const [isFeatureSaving, setIsFeatureSaving] = useState(false);
+  const [pendingToggleKeys, setPendingToggleKeys] = useState<Record<string, boolean>>({});
+  const [visibilityToggleError, setVisibilityToggleError] = useState<string | null>(null);
 
   const [editingGroup, setEditingGroup] = useState<AccessGroupRecord | null>(null);
   const [groupDraft, setGroupDraft] = useState<AccessGroupRecord | null>(null);
@@ -134,6 +142,28 @@ export default function AccessFeaturesPage() {
     setEditingFeature(null);
     setFeatureDraft(null);
     setFeatureSaveError(null);
+  };
+
+  const isVisibilityUpdating = (featureId: string, field: VisibilityField) =>
+    Boolean(pendingToggleKeys[getVisibilityToggleKey(featureId, field)]);
+
+  const handleVisibilityToggle = async (feature: FeatureAccessRecord, field: VisibilityField) => {
+    const toggleKey = getVisibilityToggleKey(feature.id, field);
+    setPendingToggleKeys((prev) => ({ ...prev, [toggleKey]: true }));
+    setVisibilityToggleError(null);
+    try {
+      await updateFeature(feature.id, { [field]: !feature[field] });
+    } catch (err) {
+      console.error("[AccessFeaturesPage] Failed to update visibility:", err);
+      const message = err instanceof Error ? err.message : "Failed to update visibility flag.";
+      setVisibilityToggleError(message);
+    } finally {
+      setPendingToggleKeys((prev) => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
+    }
   };
 
   const toggleFeatureArray = (key: "allowedRoles" | "allowedGroups", value: string) => {
@@ -262,6 +292,11 @@ export default function AccessFeaturesPage() {
           </button>
         </div>
       </div>
+      {visibilityToggleError && (
+        <div className="error-banner" role="alert" aria-live="polite">
+          {visibilityToggleError}
+        </div>
+      )}
 
       <div className="access-grid">
         <section className="access-card">
@@ -351,17 +386,27 @@ export default function AccessFeaturesPage() {
                         </div>
                       </td>
                       <td>
-                        <div className="access-table__flags">
-                          <span
-                            className={`visibility-flag ${feature.showInSidebar ? "visibility-flag--on" : "visibility-flag--off"}`}
-                          >
-                            Sidebar
-                          </span>
-                          <span
-                            className={`visibility-flag ${feature.showInTopbar ? "visibility-flag--on" : "visibility-flag--off"}`}
-                          >
-                            Topbar
-                          </span>
+                        <div className="access-table__toggles">
+                          <label className="access-toggle">
+                            <input
+                              type="checkbox"
+                              checked={feature.showInSidebar}
+                              onChange={() => handleVisibilityToggle(feature, "showInSidebar")}
+                              disabled={isVisibilityUpdating(feature.id, "showInSidebar")}
+                              aria-label="Show feature in sidebar"
+                            />
+                            <span>Sidebar</span>
+                          </label>
+                          <label className="access-toggle">
+                            <input
+                              type="checkbox"
+                              checked={feature.showInTopbar}
+                              onChange={() => handleVisibilityToggle(feature, "showInTopbar")}
+                              disabled={isVisibilityUpdating(feature.id, "showInTopbar")}
+                              aria-label="Show feature in topbar"
+                            />
+                            <span>Topbar</span>
+                          </label>
                         </div>
                       </td>
                       <td className="access-table__meta">

@@ -1014,6 +1014,18 @@ button.text-link {
   gap: 0.35rem;
 }
 
+.access-table__toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.access-toggle input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #76a2ff;
+}
+
 .access-table__meta {
   color: #9fb0d4;
   font-size: 0.85rem;

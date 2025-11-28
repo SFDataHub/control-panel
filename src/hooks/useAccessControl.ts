@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useAuth from "./useAuth";
-import { fetchAccessConfig } from "../lib/adminAccessControlApi";
+import { fetchAccessConfig, updateFeatureAccess } from "../lib/adminAccessControlApi";
 import type {
   AccessGroup,
   AccessRole,
@@ -26,6 +26,7 @@ export interface UseAccessControlResult {
   isLoading: boolean;
   error: string | null;
   refresh: () => void;
+  updateFeature: (featureId: string, patch: Partial<FeatureAccess>) => Promise<void>;
 }
 
 const KNOWN_STATUSES: FeatureAccessStatus[] = ["public", "logged_in", "beta", "dev_only", "hidden"];
@@ -225,11 +226,22 @@ export default function useAccessControl(): UseAccessControlResult {
     void fetchData();
   }, [authLoading, user, fetchData]);
 
+  const updateFeature = useCallback(async (featureId: string, patch: Partial<FeatureAccess>) => {
+    await updateFeatureAccess(featureId, patch);
+    const normalizedPatch = patch as Partial<FeatureAccessRecord>;
+    setFeatures((current) =>
+      current.map((feature) =>
+        feature.id === featureId ? ({ ...feature, ...normalizedPatch } as FeatureAccessRecord) : feature,
+      ),
+    );
+  }, []);
+
   return {
     features,
     accessGroups,
     isLoading,
     error,
     refresh,
+    updateFeature,
   };
 }
