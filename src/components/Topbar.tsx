@@ -128,6 +128,15 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen }: TopbarProps) 
                   <p className="topbar__dropdown-name">{displayName}</p>
                   <p className="topbar__dropdown-sub">Signed in via {user?.provider}</p>
                 </div>
+                <button
+                  type="button"
+                  className="topbar__dropdown-item"
+                  onClick={() => {
+                    window.location.href = "/";
+                  }}
+                >
+                  Back to SFDataHub
+                </button>
                 <button type="button" className="topbar__dropdown-item" onClick={handleLogout}>
                   Logout
                 </button>
