@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import { coreServices } from "../config/services";
-import { mockLogs } from "../config/logs";
+import { useAdminLogs } from "../hooks/useAdminLogs";
 import type { LogEntry, LogLevel, LogServiceId } from "../config/logs";
 
 type TimeRangeValue = "1h" | "24h" | "7d" | "all";
@@ -61,12 +61,13 @@ export default function LogsPage() {
   const [timeFilter, setTimeFilter] = useState<TimeRangeValue>("24h");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+  const { logs, loading, error, hasMore, loadMore, reload } = useAdminLogs();
 
   const filteredLogs = useMemo(() => {
     const now = Date.now();
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return mockLogs.filter((log) => {
+    return logs.filter((log) => {
       if (serviceFilter !== "all" && log.service !== serviceFilter) {
         return false;
       }
@@ -85,7 +86,7 @@ export default function LogsPage() {
       }
       return true;
     });
-  }, [serviceFilter, levelFilter, timeFilter, searchTerm]);
+  }, [logs, serviceFilter, levelFilter, timeFilter, searchTerm]);
 
   const counts = useMemo(
     () => ({
@@ -104,7 +105,7 @@ export default function LogsPage() {
         <PageHeader
           title="Logs"
           subtitle="Inspect errors, warnings and info across SFDataHub services"
-          hintRight="Demo data only - backend wiring later"
+          hintRight="Live audit log feed from auth-api"
         />
       }
     >
@@ -160,25 +161,51 @@ export default function LogsPage() {
         </div>
       </div>
 
-      <div className="log-table">
-        {filteredLogs.map((log) => (
-          <button
-            type="button"
-            key={log.id}
-            className="log-row"
-            onClick={() => setSelectedLog(log)}
-          >
-            <div className="log-row__head">
-              <span className="log-row__timestamp">{formatTimestamp(log.timestamp)}</span>
-              <span className={`log-badge log-badge--${log.level}`}>{log.level}</span>
-            </div>
-            <div className="log-row__body">
-              <span className="log-row__service">{serviceNameMap[log.service] ?? "Other"}</span>
-              <span className="log-row__message">{log.message}</span>
-            </div>
-          </button>
-        ))}
+      {error && (
+        <div className="logs-error">
+          <p>{error}</p>
+        </div>
+      )}
+
+      <div className="logs-actions">
+        <button type="button" className="btn secondary" onClick={reload} disabled={loading}>
+          Refresh
+        </button>
       </div>
+
+      <div className="log-table">
+        {loading && logs.length === 0 ? (
+          <p className="logs-empty">Loading logs…</p>
+        ) : filteredLogs.length === 0 ? (
+          <p className="logs-empty">No logs for the selected filters</p>
+        ) : (
+          filteredLogs.map((log) => (
+            <button
+              type="button"
+              key={log.id}
+              className="log-row"
+              onClick={() => setSelectedLog(log)}
+            >
+              <div className="log-row__head">
+                <span className="log-row__timestamp">{formatTimestamp(log.timestamp)}</span>
+                <span className={`log-badge log-badge--${log.level}`}>{log.level}</span>
+              </div>
+              <div className="log-row__body">
+                <span className="log-row__service">{serviceNameMap[log.service] ?? "Other"}</span>
+                <span className="log-row__message">{log.message}</span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      {hasMore && (
+        <div className="logs-load-more">
+          <button type="button" className="btn secondary" onClick={loadMore} disabled={loading}>
+            Load more
+          </button>
+        </div>
+      )}
 
       {selectedLog && (
         <div className="log-modal" role="dialog" aria-modal="true">
@@ -205,7 +232,7 @@ export default function LogsPage() {
                   <p>{selectedLog.details}</p>
                 </div>
               )}
-              {selectedLog.context && (
+              {selectedLog.context != null && (
                 <div>
                   <p className="log-modal__section-title">Context</p>
                   <pre>{JSON.stringify(selectedLog.context, null, 2)}</pre>

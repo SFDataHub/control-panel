@@ -5,14 +5,15 @@ export type LogServiceId = ServiceId;
 
 export interface LogEntry {
   id: string;
-  timestamp: string;
-  level: LogLevel;
   service: LogServiceId;
+  level: LogLevel;
+  timestamp: string;
   message: string;
   details?: string;
-  context?: Record<string, unknown>;
+  context?: unknown;
 }
 
+// Legacy sample data kept for fallback/development use; LogsPage now consumes real audit logs.
 export const mockLogs: LogEntry[] = [
   {
     id: "log-001",

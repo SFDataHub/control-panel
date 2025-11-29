@@ -1541,6 +1541,36 @@ button.text-link {
   gap: 0.6rem;
 }
 
+.logs-error {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 130, 115, 0.12);
+  border: 1px solid rgba(255, 130, 115, 0.35);
+  color: #ffc6c2;
+}
+
+.logs-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.logs-empty {
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid #1f3150;
+  background: #0f1a2c;
+  color: #b3bfd2;
+  text-align: center;
+}
+
+.logs-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
 .log-row {
   display: flex;
   flex-direction: column;
