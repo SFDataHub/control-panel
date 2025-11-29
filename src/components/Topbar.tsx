@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import useAuth, { type AuthProvider } from "../hooks/useAuth";
 
+const MAIN_FRONTEND_URL = import.meta.env.FRONTEND_BASE_URL;
+
 type TopbarProps = {
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
@@ -132,7 +134,9 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen }: TopbarProps) 
                   type="button"
                   className="topbar__dropdown-item"
                   onClick={() => {
-                    window.location.href = "/";
+                    if (MAIN_FRONTEND_URL) {
+                      window.location.href = MAIN_FRONTEND_URL;
+                    }
                   }}
                 >
                   Back to SFDataHub
