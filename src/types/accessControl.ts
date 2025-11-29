@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type AccessRole = "user" | "moderator" | "developer" | "admin" | (string & {});
+export type AccessRole = "guest" | "user" | "moderator" | "developer" | "admin" | (string & {});
 export type FeatureAccessStatus = "logged_in" | "public" | "beta" | "dev_only" | "hidden" | (string & {});
 export type FeatureArea = "controlPanel" | (string & {});
 export type TimestampValue = Timestamp | string | Date | number | null;

@@ -1320,6 +1320,11 @@ button.text-link {
   border-color: rgba(194, 201, 223, 0.4);
 }
 
+.role-pill--guest {
+  color: #c2c9df;
+  border-color: rgba(194, 201, 223, 0.4);
+}
+
 .role-pill--developer {
   color: #76a2ff;
   border-color: rgba(118, 162, 255, 0.5);

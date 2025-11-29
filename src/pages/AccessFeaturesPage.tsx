@@ -25,6 +25,7 @@ const statusMeta: Record<string, { label: string; tone: string }> = {
 };
 
 const roleLabels: Record<string, string> = {
+  guest: "Guest",
   admin: "Admin",
   owner: "Owner",
   mod: "Moderator",
@@ -33,7 +34,7 @@ const roleLabels: Record<string, string> = {
   user: "User",
 };
 
-const editableRoles: AccessRole[] = ["admin", "moderator", "developer", "user"];
+const editableRoles: AccessRole[] = ["guest", "user", "moderator", "developer", "admin"];
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
