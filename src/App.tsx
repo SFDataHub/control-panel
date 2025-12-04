@@ -13,6 +13,7 @@ import RequireAdmin from "./components/RequireAdmin";
 import AdminScansUploaded from "./pages/admin/ScansUploaded";
 import AdminFeedback from "./pages/admin/Feedback";
 import TodoPage from "./pages/admin/TodoPage";
+import CLICommandsPage from "./pages/admin/CLICommandsPage";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -49,6 +50,7 @@ function App() {
               <Route path="/admin/scans-uploaded" element={<AdminScansUploaded />} />
               <Route path="/admin/todo" element={<TodoPage />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />
+              <Route path="/cli-commands" element={<CLICommandsPage />} />
               <Route path="/logs" element={<LogsPage />} />
               <Route path="/apis" element={<ApiStatusPage />} />
               <Route path="/settings" element={<SettingsPage />} />

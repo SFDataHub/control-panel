@@ -25,7 +25,7 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen }: TopbarProps) 
 
   const roleBadges = useMemo(() => {
     const roles = user?.roles ?? [];
-    return roles.filter((role) => ["admin", "moderator", "mod"].includes(role.toLowerCase()));
+    return roles.filter((role) => ["admin", "owner", "developer", "mod", "moderator"].includes(role.toLowerCase()));
   }, [user]);
 
   useEffect(() => {

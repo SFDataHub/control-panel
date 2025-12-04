@@ -8,6 +8,17 @@ import type { LogEntry, LogLevel, LogServiceId } from "../config/logs";
 
 type TimeRangeValue = "1h" | "24h" | "7d" | "all";
 
+type EventFilterValue = "all" | "userRoles" | "featureAccess";
+
+type LogsLocationState = {
+  defaultFilters?: {
+    service?: LogServiceId | "all";
+    level?: LogLevel | "all";
+    timeRange?: TimeRangeValue;
+    search?: string;
+  };
+};
+
 const serviceOptions: { label: string; value: LogServiceId | "all" }[] = [
   { label: "All services", value: "all" },
   { label: "Auth API", value: "auth-api" },
@@ -38,6 +49,12 @@ const timeOptions: { label: string; value: TimeRangeValue }[] = [
   { label: "All time", value: "all" },
 ];
 
+const eventTypeOptions: { label: string; value: EventFilterValue }[] = [
+  { label: "All events", value: "all" },
+  { label: "User roles", value: "userRoles" },
+  { label: "Feature access", value: "featureAccess" },
+];
+
 const serviceNameMap = Object.fromEntries(coreServices.map((service) => [service.id, service.name])) as Record<
   LogServiceId,
   string
@@ -55,11 +72,12 @@ function formatTimestamp(value: string) {
 
 export default function LogsPage() {
   const location = useLocation();
-  const defaultFilters = (location.state as { defaultFilters?: { service?: LogServiceId | "all"; level?: LogLevel | "all" } })?.defaultFilters ?? {};
+  const defaultFilters = (location.state as LogsLocationState)?.defaultFilters ?? {};
   const [serviceFilter, setServiceFilter] = useState<LogServiceId | "all">(defaultFilters.service ?? "all");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">(defaultFilters.level ?? "all");
-  const [timeFilter, setTimeFilter] = useState<TimeRangeValue>("24h");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [timeFilter, setTimeFilter] = useState<TimeRangeValue>(defaultFilters.timeRange ?? "24h");
+  const [searchTerm, setSearchTerm] = useState(defaultFilters.search ?? "");
+  const [eventFilter, setEventFilter] = useState<EventFilterValue>("all");
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const { logs, loading, error, hasMore, loadMore, reload } = useAdminLogs();
 
@@ -84,9 +102,24 @@ export default function LogsPage() {
       if (normalizedSearch && !log.message.toLowerCase().includes(normalizedSearch)) {
         return false;
       }
+      if (eventFilter !== "all") {
+        const context = log.context;
+        const action =
+          context && typeof context === "object" && "action" in context
+            ? String((context as any).action)
+            : "";
+
+        if (eventFilter === "userRoles" && !action.startsWith("user.role.")) {
+          return false;
+        }
+
+        if (eventFilter === "featureAccess" && !action.startsWith("feature.access.")) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [logs, serviceFilter, levelFilter, timeFilter, searchTerm]);
+  }, [logs, serviceFilter, levelFilter, timeFilter, searchTerm, eventFilter]);
 
   const counts = useMemo(
     () => ({
@@ -124,6 +157,19 @@ export default function LogsPage() {
           <span>Level</span>
           <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value as LogLevel | "all")}>
             {levelOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="filter-control">
+          <span>Event type</span>
+          <select
+            value={eventFilter}
+            onChange={(event) => setEventFilter(event.target.value as EventFilterValue)}
+          >
+            {eventTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

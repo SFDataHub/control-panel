@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ContentShell from "../components/ContentShell";
 import PageHeader from "../components/PageHeader";
 import useAccessControl, { type AccessGroupRecord, type FeatureAccessRecord } from "../hooks/useAccessControl";
@@ -96,6 +97,7 @@ function arraysEqual(a?: string[], b?: string[]) {
 }
 
 export default function AccessFeaturesPage() {
+  const navigate = useNavigate();
   const { features, accessGroups, isLoading, error, refresh, updateFeature } = useAccessControl();
   const [featureSearch, setFeatureSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FeatureStatusFilter>("all");
@@ -235,6 +237,19 @@ export default function AccessFeaturesPage() {
       nextSet.add(role);
     }
     setGroupDraft({ ...groupDraft, allowedRoles: Array.from(nextSet) });
+  };
+
+  const handleViewLogs = (feature: FeatureAccessRecord) => {
+    navigate("/logs", {
+      state: {
+        defaultFilters: {
+          service: "auth-api",
+          level: "all",
+          timeRange: "7d",
+          search: feature.id,
+        },
+      },
+    });
   };
 
   const groupHasChanges = useMemo(() => {
@@ -414,13 +429,22 @@ export default function AccessFeaturesPage() {
                         {formatTimestamp(feature.updatedAt ?? feature.createdAt)}
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="text-link"
-                          onClick={() => startFeatureEdit(feature)}
-                        >
-                          Edit
-                        </button>
+                        <div>
+                          <button
+                            type="button"
+                            className="text-link"
+                            onClick={() => handleViewLogs(feature)}
+                          >
+                            Logs
+                          </button>
+                          <button
+                            type="button"
+                            className="text-link"
+                            onClick={() => startFeatureEdit(feature)}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import useAuth from "../hooks/useAuth";
 
-const ADMIN_ROLES = ["owner", "admin"];
+const ADMIN_ROLES = ["owner", "admin", "developer", "dev"];
 
 function GateScreen({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
   return (
