@@ -47,6 +47,30 @@ const tasks: Task[] = [
     comments: 3,
   },
   {
+    id: "TD-1045",
+    title: "Session-TTL anheben (Option A)",
+    description:
+      "Kurzfristig Session-Lifetime hochsetzen (z.B. 8h) fグr Dev/Admin-Betrieb; mittelfristig Option C planen, sobald mehr Nutzer aktiv sind. Folge-Task: Session-TTL von 15 min auf X Stunden (JWT + Cookie) anheben und Stellen dokumentieren (Konstanten/ENV/Set-Cookie).",
+    priority: "High",
+    status: "Open",
+    owners: ["@max"],
+    category: "Security",
+    comments: 2,
+    linked: ["TD-1046"],
+  },
+  {
+    id: "TD-1046",
+    title: "Option C vorbereiten: Access + Refresh Token",
+    description:
+      "Aufbauend auf Option A: Access-Token bleibt kurz (ca. 10–15 min), Refresh-Token als HTTP-only Cookie mit 7–30 Tagen Laufzeit. Frontend holt automatisch neue Access-Tokens, solange Refresh gultig ist. Vorteile: Best Practice wie bei groグen Web-Apps; kurze Tokens, aber lange Sessions. Nachteile: Mehr Implementierungsaufwand (neuer /auth/refresh Endpoint, Token-Rotation, Fehlerhandling).",
+    priority: "Medium",
+    status: "Open",
+    owners: ["@max"],
+    category: "Security",
+    comments: 1,
+    linked: ["TD-1045"],
+  },
+  {
     id: "TD-1039",
     title: "Dashboard-Ansicht optimieren",
     description: "Responsive Kacheln, mobile Burger-Menü finalisieren.",
